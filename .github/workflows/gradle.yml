@@ -51,7 +51,7 @@ jobs:
       with:
         host: ${{ secrets.EC2_HOST }} # EC2 인스턴스 퍼블릭 DNS
         username: ubuntu
-        key: ${{ secrets.EC2_SSH_PRIVATE_KEY }} # pem 키
+        key: ${{ secrets.EC2_SSH_PRIVATE_KEY }} # pem 키 삽입
         # 도커 작업
         script: |
           docker pull ${{ secrets.DOCKER_USERNAME }}/demo:latest
