@@ -14,4 +14,10 @@ public class TestController {
         String result = "API 통신에 성공했습니다.";
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
+
+    @GetMapping("/actions")
+    public ResponseEntity<Object> testAction() {
+        String result = "Actions 진입에 성공했습니다.";
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
 }
