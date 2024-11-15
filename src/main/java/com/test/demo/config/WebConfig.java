@@ -1,34 +1,34 @@
 package com.test.demo.config;
 
-import jakarta.servlet.Filter;
-import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.CharacterEncodingFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@Slf4j
-@EnableWebMvc
-public class WebConfig extends AbstractAnnotationConfigDispatcherServletInitializer {
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
     @Override
-    protected Class<?>[] getRootConfigClasses() {
-        return new Class[] {RootConfig.class};
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/resources/**")
+                .addResourceLocations("/resources/");
     }
 
     @Override
-    protected Class<?>[] getServletConfigClasses() {
-        return new Class[] {ServletConfig.class};
+    public void addCorsMappings(CorsRegistry registry) {
+        System.out.println("WebConfigurer addCorsMappings ~");
+        // 접속 클라이언트를 허가(Restful)
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:3000")  // Vue의 개발 서버 주소
+                .allowedMethods("GET", "POST", "PUT", "DELETE")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 
-    @Override
-    protected String[] getServletMappings() {
-        return new String[0];
-    }
 
-    @Override
-    protected Filter[] getServletFilters() {
-        CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
-        characterEncodingFilter.setEncoding("UTF-8");
-        characterEncodingFilter.setForceEncoding(true);
-        return new Filter[] { characterEncodingFilter };
-    }
 }

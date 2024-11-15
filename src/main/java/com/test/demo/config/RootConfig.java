@@ -1,5 +1,7 @@
 package com.test.demo.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -73,4 +75,10 @@ public class RootConfig {
         characterEncodingFilter.setForceEncoding(true);
         return characterEncodingFilter;
     }
+
+
+//    @Bean
+//    public ObjectMapper objectMapper() {
+//        return new ObjectMapper(); // Jackson ObjectMapper 빈 등록
+//    }
 }
