@@ -56,7 +56,7 @@ jobs:
         script: |
           docker pull ${{ secrets.DOCKER_USERNAME }}/demo:latest
           docker stop be || true  # 해당 ID의 컨테이너만 종료
-          docker run -d --log-driver=syslog -p 8080:8080 --name be ${{ secrets.DOCKER_USERNAME }}/demo:latest
+          docker run -d -p 8080:8080 --name be ${{ secrets.DOCKER_USERNAME }}/demo:latest
           docker rm $(docker ps --filter 'status=exited' -a -q)
           docker image prune -a -f
 
