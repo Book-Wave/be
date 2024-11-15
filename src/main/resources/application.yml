@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: demo
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://book-wave-db.cze40aa02479.ap-northeast-2.rds.amazonaws.com:3306/bw/useSSL=false
+    username: jaeyu
+    password: Zhtxjf22!
