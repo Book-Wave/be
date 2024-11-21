@@ -105,35 +105,16 @@ public class AuthController {
     }
 
     @PostMapping("/social/new")
-    public ResponseEntity<?> kakao_regiser(@RequestBody Map<String, Object> requestData,
-                                           HttpSession session) {
-        String nick_name = (String) requestData.get("nickname");
-        String birth_date = (String) requestData.get("birthdate");
-        int gender = Integer.parseInt((String) requestData.get("gender"));
+    public ResponseEntity<?> social_regiser(@RequestBody Map<String, Object> requestData, HttpSession session) {
         try {
-            String oauth_provider = (String) session.getAttribute("oauth_provider");
-            String oauth_id = (String) session.getAttribute("oauth_id");
-            String name = (String) session.getAttribute("name");
-            String email = (String) session.getAttribute("email");
-
-            if (oauth_provider == null || oauth_id == null) {
-                return ResponseEntity.status(400).body("Invalid session. Please retry login.");
-            }
-            MemberVO memberVO = new MemberVO(oauth_provider, oauth_id, name, email, nick_name, birth_date, gender);
-
-            memberService.save(memberVO);
-            String token = memberService.create_token(memberVO.getEmail(), memberVO.getMember_id());
-            logger.info("Kakao user info retrieved: {}", token);
-
-            session.removeAttribute("oauth_provider");
-            session.removeAttribute("oauth_id");
-            session.removeAttribute("name");
-            session.removeAttribute("email");
-
+            String token = memberService.social_register(requestData, session);
+            logger.info("Social user info retrieved: {}", token);
             return ResponseEntity.ok().body(Map.of("token", token));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(400).body(e.getMessage());
         } catch (Exception e) {
-            logger.error("Error during Kakao register process", e);
-            return ResponseEntity.status(500).body("Kakao register failed.");
+            logger.error("Error during Social register process", e);
+            return ResponseEntity.status(500).body("Social register failed.");
         }
     }
 
