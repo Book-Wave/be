@@ -1,4 +1,4 @@
-package com.test.demo.dao;
+package com.test.demo.dao.member;
 
 import com.test.demo.mapper.MemberMapper;
 import com.test.demo.vo.MemberVO;
@@ -14,7 +14,11 @@ public class MemberDAO {
         this.memberMapper = memberMapper;
     }
 
-    public void save_member(MemberVO memberVO) {
-        memberMapper.insert_member(memberVO);
+    public void save(MemberVO memberVO) {
+        memberMapper.save(memberVO);
     }
+
+    public MemberVO find_by_id_provider(String oauth_provider, String oauth_id) { return memberMapper.find_by_id_provider(oauth_provider, oauth_id); }
+
+    public MemberVO find_by_email(String email) { return memberMapper.find_by_email(email); }
 }

@@ -4,8 +4,21 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.test.demo.mapper.MemberMapper">
-    <insert id="insert_member" parameterType="com.test.demo.vo.MemberVO">
-        INSERT INTO member(kakao, email, name)
-        VALUES(#{kakao}, #{email}, #{name})
+    <insert id="save" parameterType="com.test.demo.vo.MemberVO">
+        INSERT INTO `member`(oauth_provider, oauth_id, name, email, nick_name, birth_date, gender)
+        VALUES(#{oauth_provider}, #{oauth_id}, #{name}, #{email}, #{nick_name}, #{birth_date}, #{gender})
     </insert>
+
+    <select id="find_by_id_provider" resultType="com.test.demo.vo.MemberVO">
+        SELECT *
+        FROM `member`
+        WHERE oauth_provider = #{oauth_provider}
+        AND oauth_id = #{oauth_id}
+    </select>
+
+    <select id="find_by_email" resultType="com.test.demo.vo.MemberVO">
+        SELECT *
+        FROM `member`
+        WHERE email = #{email}
+    </select>
 </mapper>

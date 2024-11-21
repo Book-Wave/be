@@ -11,5 +11,4 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("book/chat")
 public class ChatController {
 
-    private final
 }

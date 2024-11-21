@@ -30,6 +30,8 @@ public class RootConfig {
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
+    @Bean
+    public ObjectMapper objectMapper() { return new ObjectMapper(); }
 
     @Value("${spring.datasource.driver-class-name}") String driver;
     @Value("${spring.datasource.url}") String url;
@@ -77,8 +79,5 @@ public class RootConfig {
     }
 
 
-//    @Bean
-//    public ObjectMapper objectMapper() {
-//        return new ObjectMapper(); // Jackson ObjectMapper 빈 등록
-//    }
+
 }
