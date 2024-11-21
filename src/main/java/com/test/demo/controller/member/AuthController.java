@@ -46,63 +46,76 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(login_url)).build();
     }
 
-    @GetMapping("/kakao/callback")
-    public ResponseEntity<?> kakao_callback(@RequestParam("code") String code, HttpSession session) {
-        logger.info("Received Kakao login callback with code: {}", code);
+//    @GetMapping("/kakao/callback")
+//    public ResponseEntity<?> kakao_callback(@RequestParam("code") String code, HttpSession session) {
+//        logger.info("Received Kakao login callback with code: {}", code);
+//        try {
+//            MemberVO memberVO = kakaoOAuthService.get_kakao_user_info(code);  // KakaoOAuthService 호출
+//            if (memberVO != null) {
+//                logger.info("Kakao user info retrieved: {}", memberVO);
+//                MemberVO member = memberService.check_kakao(memberVO);
+//                if (member != null) {
+//                    String token = memberService.create_token(member.getEmail(), member.getMember_id());
+//                    return ResponseEntity.ok().body(Map.of("token", token));
+//                } else {
+//                    logger.info("Kakao user info does not exist");
+//                    session.setAttribute("oauth_provider", memberVO.getOauth_provider());
+//                    session.setAttribute("oauth_id", memberVO.getOauth_id());
+//                    session.setAttribute("name", memberVO.getName());
+//                    session.setAttribute("email", memberVO.getEmail());
+//                    return ResponseEntity.ok().body(Map.of("new_user", true));
+//                }
+//            } else {
+//                logger.error("Failed to retrieve Kakao user info.");
+//                return ResponseEntity.status(500).body("Failed to retrieve user info from Kakao.");
+//            }
+//        } catch (Exception e) {
+//            logger.error("Error during Kakao login process", e);
+//            return ResponseEntity.status(500).body("Kakao login failed.");
+//        }
+//    }
+    @GetMapping("/{provider}/callback")
+    public ResponseEntity<?> oauth_callback(@PathVariable("provider") String provider,
+                                            @RequestParam("code") String code,
+                                            @RequestParam(name = "state", required = false) String state,
+                                            HttpSession session) {
         try {
-            MemberVO memberVO = kakaoOAuthService.get_kakao_user_info(code);  // KakaoOAuthService 호출
-            if (memberVO != null) {
-                logger.info("Kakao user info retrieved: {}", memberVO);
-                MemberVO member = memberService.check_kakao(memberVO);
-                if (member != null) {
-                    String token = memberService.create_token(member.getEmail(), member.getMember_id());
-                    return ResponseEntity.ok().body(Map.of("token", token));
-                } else {
-                    logger.info("Kakao user info does not exist");
-                    session.setAttribute("oauth_provider", memberVO.getOauth_provider());
-                    session.setAttribute("oauth_id", memberVO.getOauth_id());
-                    session.setAttribute("name", memberVO.getName());
-                    session.setAttribute("email", memberVO.getEmail());
-                    return ResponseEntity.ok().body(Map.of("new_user", true));
-                }
-            } else {
-                logger.error("Failed to retrieve Kakao user info.");
-                return ResponseEntity.status(500).body("Failed to retrieve user info from Kakao.");
-            }
-        } catch (Exception e) {
-            logger.error("Error during Kakao login process", e);
-            return ResponseEntity.status(500).body("Kakao login failed.");
+            Map<String, Object> response = memberService.login_callback(provider, code, state, session);
+            return ResponseEntity.ok().body(response);
+        } catch (RuntimeException e) {
+            logger.error("Error during {} login process", provider, e);
+            return ResponseEntity.status(500).body(provider + " login failed.");
         }
     }
 
-    @GetMapping("/naver/callback")
-    public ResponseEntity<?> naver_callback(@RequestParam("code") String code, @RequestParam("state") String state, HttpSession session) {
-        logger.info("Received Naver login callback with code: {}, state: {}", code, state);
-        try {
-            MemberVO memberVO = naverOAuthService.get_naver_user_info(code, state);  // NaverOAuthService 호출
-            if (memberVO != null) {
-                logger.info("Naver user info retrieved: {}", memberVO);
-                MemberVO member = memberService.check_naver(memberVO);
-                if (member != null) {
-                    String token = memberService.create_token(member.getEmail(), member.getMember_id());
-                    return ResponseEntity.ok().body(Map.of("token", token));
-                } else {
-                    logger.info("Naver user info does not exist");
-                    session.setAttribute("oauth_provider", memberVO.getOauth_provider());
-                    session.setAttribute("oauth_id", memberVO.getOauth_id());
-                    session.setAttribute("name", memberVO.getName());
-                    session.setAttribute("email", memberVO.getEmail());
-                    return ResponseEntity.ok().body(Map.of("new_user", true));
-                }
-            } else {
-                logger.error("Failed to retrieve Naver user info.");
-                return ResponseEntity.status(500).body("Failed to retrieve user info from Naver.");
-            }
-        } catch (Exception e) {
-            logger.error("Error during Naver login process", e);
-            return ResponseEntity.status(500).body("Naver login failed.");
-        }
-    }
+//    @GetMapping("/naver/callback")
+//    public ResponseEntity<?> naver_callback(@RequestParam("code") String code, @RequestParam("state") String state, HttpSession session) {
+//        logger.info("Received Naver login callback with code: {}, state: {}", code, state);
+//        try {
+//            MemberVO memberVO = naverOAuthService.get_naver_user_info(code, state);  // NaverOAuthService 호출
+//            if (memberVO != null) {
+//                logger.info("Naver user info retrieved: {}", memberVO);
+//                MemberVO member = memberService.(memberVO);
+//                if (member != null) {
+//                    String token = memberService.create_token(member.getEmail(), member.getMember_id());
+//                    return ResponseEntity.ok().body(Map.of("token", token));
+//                } else {
+//                    logger.info("Naver user info does not exist");
+//                    session.setAttribute("oauth_provider", memberVO.getOauth_provider());
+//                    session.setAttribute("oauth_id", memberVO.getOauth_id());
+//                    session.setAttribute("name", memberVO.getName());
+//                    session.setAttribute("email", memberVO.getEmail());
+//                    return ResponseEntity.ok().body(Map.of("new_user", true));
+//                }
+//            } else {
+//                logger.error("Failed to retrieve Naver user info.");
+//                return ResponseEntity.status(500).body("Failed to retrieve user info from Naver.");
+//            }
+//        } catch (Exception e) {
+//            logger.error("Error during Naver login process", e);
+//            return ResponseEntity.status(500).body("Naver login failed.");
+//        }
+//    }
 
     @PostMapping("/social/new")
     public ResponseEntity<?> social_regiser(@RequestBody Map<String, Object> requestData, HttpSession session) {

@@ -18,16 +18,11 @@ import java.util.Map;
 public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberDAO memberDAO;
+    private final KakaoOAuthService kakaoOAuthService;
+    private final NaverOAuthService naverOAuthService;
 
-
-    public MemberVO check_kakao(MemberVO memberVO) {
-        MemberVO existingMember = memberDAO.find_by_id_provider("kakao", memberVO.getOauth_id());
-        return existingMember;
-    }
-
-    public MemberVO check_naver(MemberVO memberVO) {
-        MemberVO existingMember = memberDAO.find_by_id_provider("naver", memberVO.getOauth_id());
-        return existingMember;
+    public MemberVO check_member(MemberVO memberVO, String oauth_provider) {
+        return memberDAO.find_by_id_provider(oauth_provider, memberVO.getOauth_id());
     }
 
     public String social_register(Map<String, Object> requestData, HttpSession session) {
@@ -53,6 +48,35 @@ public class MemberService {
         session.removeAttribute("email");
 
         return token;
+    }
+
+    public Map<String, Object> login_callback(String oauth_provider, String code, String state, HttpSession session) {
+        try {
+            MemberVO memberVO = null;
+            if ("kakao".equals(oauth_provider)) {
+                memberVO = kakaoOAuthService.get_kakao_user_info(code);
+            } else if ("naver".equals(oauth_provider)) {
+                memberVO = naverOAuthService.get_naver_user_info(code, state);
+            }
+
+            if (memberVO != null) {
+                MemberVO existing = check_member(memberVO, oauth_provider);
+                if (existing != null) {
+                    String token = create_token(existing.getEmail(), existing.getMember_id());
+                    return Map.of("token", token);
+                } else {
+                    session.setAttribute("oauth_provider", memberVO.getOauth_provider());
+                    session.setAttribute("oauth_id", memberVO.getOauth_id());
+                    session.setAttribute("name", memberVO.getName());
+                    session.setAttribute("email", memberVO.getEmail());
+                    return Map.of("new_user", true);
+                }
+            } else {
+                throw new Exception("Failed to retrieve user info.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error during OAuth login callback process", e);
+        }
     }
 
     @Transactional
