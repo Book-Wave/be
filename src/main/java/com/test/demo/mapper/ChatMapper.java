@@ -1,22 +1,23 @@
 package com.test.demo.mapper;
 
-import com.test.demo.dao.chat.chatroomDAO;
-import com.test.demo.dao.chat.messageDAO;
-import org.apache.ibatis.annotations.Insert;
+import com.test.demo.dao.ChatDAO;
+import com.test.demo.vo.ChatVO;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+
+
+import java.util.List;
+
 
 @Mapper
 public interface ChatMapper {
 
-    @Insert("INSERT INTO chats (room_id, sender, sender_email, message, send_date) " +
-            "VALUES (#{roomId}, #{sender}, #{senderEmail}, #{message}, #{sendDate})")
-    void insertChat(messageDAO chat);
+//  전송한 메세지 저장
+    void insertMessage(ChatDAO chatDAO);
 
-    @Insert("INSERT INTO chat_rooms (name) VALUES (#{name})")
-    void insertChatRoom(chatroomDAO chatRoom);
+//  채팅 내역 불러오기
+    List<ChatVO> selectMessagesByRoomId(String roomId);
 
-    @Select("SELECT * FROM chat_rooms WHERE chatRoom_id = #{id}")
-    chatroomDAO selectChatRoomById(Long id);
+//  메세지 삭제
+    void deleteMessage(Long id);
 
 }

@@ -2,6 +2,7 @@ package com.test.demo.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -16,17 +17,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/book/chat")
-                .setAllowedOrigins("http://localhost:8080")
-                .withSockJS();
+//      websocket url용 endpoint
+        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS();
     }
 
-    /*어플리케이션 내부에서 사용할 path를 지정할 수 있음*/
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-//      클라이언트에서 보낸 메세지를 받은 prefix
-        registry.setApplicationDestinationPrefixes("/send");
-        registry.enableSimpleBroker("/room");
+
+//      여기 모드 클라이언트 -> 서버의 url 경로를 설정한다
+//      publisher -> messagebroker -> subscriber 구성
+//      순서가 1. 구독 2. 메세지 발생 -> 해당 roomId에 메세지를 보낸다 -> convertandsend 등으로 보낸다
+
+        registry.enableSimpleBroker( "/sub");
+        registry.setApplicationDestinationPrefixes("/pub");
+
     }
 
 }
