@@ -1,7 +1,16 @@
-spring.application.name=demo
+spring:
+  application:
+    name: demo
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://book-wave-db.cze40aa02479.ap-northeast-2.rds.amazonaws.com:3306/bw
+    username: eungyu
+    password: Dyek4687!!
 
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+kakaoAPI:
+  tokenUrl: "https://kauth.kakao.com/oauth/token"
+  clientId: "876a1a6b5fad60d7b3b181b59e1a0046"
+  redirectUrl: "http://localhost:8080/book/auth/callback"
+  logoutUrl: "http://localhost:8080"
 
-# MyBatis ??
-mybatis.mapper-locations=classpath:mapper/*.xml
-mybatis.type-aliases-package=com.test.demo.vo
+
