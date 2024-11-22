@@ -13,4 +13,6 @@ public interface MemberMapper {
     MemberVO find_by_id_provider(@Param("oauth_provider") String oauth_provider, @Param("oauth_id") String oauth_id);
 
     MemberVO find_by_email(String email);
+
+    void register(MemberVO memberVO);
 }

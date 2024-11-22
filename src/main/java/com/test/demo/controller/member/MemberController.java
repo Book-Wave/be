@@ -3,12 +3,14 @@ package com.test.demo.controller.member;
 import com.test.demo.service.member.MemberService;
 import com.test.demo.vo.MemberVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("book/member")
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ public class MemberController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getMemberInfo(@AuthenticationPrincipal User user) {
+        log.info("getMemberInfo: {}", user);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
         }

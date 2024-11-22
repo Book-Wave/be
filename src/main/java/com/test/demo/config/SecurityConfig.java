@@ -1,5 +1,7 @@
 package com.test.demo.config;
 
+import com.test.demo.config.jwt.JwtAuthenticationFilter;
+import com.test.demo.config.jwt.JwtTokenProvider;
 import com.test.demo.service.member.CustomUserDetailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

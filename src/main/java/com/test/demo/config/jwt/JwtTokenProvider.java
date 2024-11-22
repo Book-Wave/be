@@ -1,4 +1,4 @@
-package com.test.demo.config;
+package com.test.demo.config.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -24,16 +24,6 @@ public class JwtTokenProvider {
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
-
-//    public String create_refresh_token(String email, Long member_id) {
-//        return Jwts.builder()
-//                .setSubject(email)
-//                .claim("member_id", member_id)
-//                .setIssuedAt(new Date())
-//                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpirationInMs))
-//                .signWith(SignatureAlgorithm.HS512, jwtSecret)
-//                .compact();
-//    }
 
     public boolean validateToken(String token) {
         try {

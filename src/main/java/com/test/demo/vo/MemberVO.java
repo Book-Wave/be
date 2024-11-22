@@ -14,6 +14,7 @@ public class MemberVO {
     private String oauth_id;
     private String name;
     private String email;
+    private String password;
     private String nick_name;
     private String birth_date;
     private int gender; // 0 -> woman , 1 - > man

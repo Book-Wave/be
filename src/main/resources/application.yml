@@ -50,3 +50,15 @@ spring:
       allowed-methods: GET, POST, PUT, DELETE
       allowed-headers: "*"
       allow-credentials: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: junyoun9dev@gmail.com
+    password: hwsqgvsgugczubyn
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

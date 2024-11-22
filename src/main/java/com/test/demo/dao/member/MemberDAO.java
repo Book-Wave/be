@@ -21,4 +21,7 @@ public class MemberDAO {
     public MemberVO find_by_id_provider(String oauth_provider, String oauth_id) { return memberMapper.find_by_id_provider(oauth_provider, oauth_id); }
 
     public MemberVO find_by_email(String email) { return memberMapper.find_by_email(email); }
+
+    public void register(MemberVO memberVO) { memberMapper.register(memberVO); }
+
 }

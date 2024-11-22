@@ -9,6 +9,11 @@
         VALUES(#{oauth_provider}, #{oauth_id}, #{name}, #{email}, #{nick_name}, #{birth_date}, #{gender})
     </insert>
 
+    <insert id="register" parameterType="com.test.demo.vo.MemberVO">
+        INSERT INTO `member`(email, `password`, `name`, nick_name, birth_date, gender)
+        VALUES (#{email}, #{password}, #{name}, #{nick_name}, #{birth_date}, #{gender})
+    </insert>
+
     <select id="find_by_id_provider" resultType="com.test.demo.vo.MemberVO">
         SELECT *
         FROM `member`

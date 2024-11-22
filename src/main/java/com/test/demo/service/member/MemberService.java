@@ -1,25 +1,30 @@
 package com.test.demo.service.member;
 
 
-import com.test.demo.config.JwtTokenProvider;
+import com.test.demo.config.jwt.JwtTokenProvider;
 import com.test.demo.dao.member.MemberDAO;
 import com.test.demo.vo.MemberVO;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.Map;
 
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
+    private static final Logger log = LoggerFactory.getLogger(MemberService.class);
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberDAO memberDAO;
     private final KakaoOAuthService kakaoOAuthService;
     private final NaverOAuthService naverOAuthService;
+    private final PasswordEncoder passwordEncoder;
 
     public MemberVO check_member(MemberVO memberVO, String oauth_provider) {
         return memberDAO.find_by_id_provider(oauth_provider, memberVO.getOauth_id());
@@ -84,11 +89,38 @@ public class MemberService {
         memberDAO.save(memberVO);
     }
 
+    public void register(MemberVO memberVO) {
+        if (memberDAO.find_by_email(memberVO.getEmail()) != null) {
+            throw new IllegalArgumentException("Email already exist.");
+        }
+        String encoded_password = passwordEncoder.encode(memberVO.getPassword());
+        memberVO.setPassword(encoded_password);
+        memberDAO.register(memberVO);
+    }
+
     public MemberVO get_by_email(String email) {
+        log.info("get by email : {}", email);
         return memberDAO.find_by_email(email);
     }
 
     public String create_token(String email, Long member_id) {
         return jwtTokenProvider.create_token(email, member_id);
+    }
+
+    public Map<String, String> login(Map<String, String> loginRequest) {
+        String email = loginRequest.get("email");
+        String password = loginRequest.get("password");
+        Map<String, String> map = new HashMap<>();
+
+        MemberVO memberVO = memberDAO.find_by_email(email);
+        if (memberVO == null) {
+            throw new IllegalArgumentException("Invalid email.");
+        }
+        if (!passwordEncoder.matches(password, memberVO.getPassword())) {
+            throw new IllegalArgumentException("Invalid password.");
+        }
+        String token = jwtTokenProvider.create_token(email, memberVO.getMember_id());
+        map.put("token", token);
+        return map;
     }
 }
