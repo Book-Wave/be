@@ -30,21 +30,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = jwtTokenProvider.resolveToken(request);
             logger.debug("JWT 토큰 추출: {}", token);
 
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                String email = jwtTokenProvider.getEmailFromToken(token);
-                logger.debug("토큰에서 추출된 사용자 이메일: {}", email);
+            if (token != null) {
+                try {
+                    if (jwtTokenProvider.validate_token(token)) {
+                        String email = jwtTokenProvider.getEmailFromToken(token);
+                        logger.debug("토큰에서 추출된 사용자 이메일: {}", email);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                logger.debug("UserDetailsService로 로드된 사용자 정보: {}", userDetails);
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                        logger.debug("UserDetailsService로 로드된 사용자 정보: {}", userDetails);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.debug("SecurityContext에 인증 정보 저장 완료");
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.debug("SecurityContext에 인증 정보 저장 완료");
+                    }
+                } catch (io.jsonwebtoken.ExpiredJwtException e) {
+                    // 토큰 만료
+                    logger.warn("만료된 토큰 사용 시도: {}", e.getMessage());
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Access token expired");
+                    return; // 체인 중단
+                }
             }
         } catch (Exception e) {
-        logger.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
+            logger.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않거나 만료된 token");
         }
         chain.doFilter(request, response);

@@ -67,9 +67,8 @@ public class AuthController {
     @PostMapping("/social/new")
     public ResponseEntity<?> social_regiser(@RequestBody Map<String, Object> request_data, HttpSession session) {
         try {
-            String token = memberService.social_register(request_data, session);
-            logger.info("Social user info retrieved: {}", token);
-            return ResponseEntity.ok().body(Map.of("token", token));
+            Map<String, String> response = memberService.social_register(request_data, session);
+            return ResponseEntity.ok().body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(400).body(e.getMessage());
         } catch (Exception e) {
@@ -107,5 +106,16 @@ public class AuthController {
         return flag ? ResponseEntity.ok("success") : ResponseEntity.status(400).body("fail");
     }
 
-
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh_token(@RequestHeader ("Authorization") String authorization) {
+        logger.info("토큰 재발급해야함 ~ Refresh token: {}", authorization);
+        try {
+            String new_access_token = memberService.refresh_access_token(authorization);
+            return ResponseEntity.ok(Map.of("token", new_access_token));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("fail");
+        }
+    }
 }
