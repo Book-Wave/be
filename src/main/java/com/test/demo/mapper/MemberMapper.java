@@ -1,7 +1,6 @@
 package com.test.demo.mapper;
 
 import com.test.demo.vo.MemberVO;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -15,4 +14,6 @@ public interface MemberMapper {
     MemberVO find_by_email(String email);
 
     void register(MemberVO memberVO);
+
+    int check_nickname(String nick_name);
 }

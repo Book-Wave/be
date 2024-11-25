@@ -31,7 +31,7 @@ public class MemberService {
     private final RedisService redisService;
     private final PasswordEncoder passwordEncoder;
     private static final String pw_pattern = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";
-
+    // 알파벳 + 숫자 + 특수기호로 이루어진 8자리 이상
     public MemberVO check_member(MemberVO memberVO, String oauth_provider) {
         return memberDAO.find_by_id_provider(oauth_provider, memberVO.getOauth_id());
     }
@@ -115,6 +115,7 @@ public class MemberService {
         }
         String encoded_password = passwordEncoder.encode(memberVO.getPassword());
         memberVO.setPassword(encoded_password);
+        log.info("service member: {}", memberVO);
         memberDAO.register(memberVO);
     }
 
@@ -169,5 +170,9 @@ public class MemberService {
             throw new IllegalArgumentException("Member does not exist.");
         }
         return jwtTokenProvider.create_token(email, memberVO.getMember_id());
+    }
+
+    public boolean check_nickname(String nick_name) {
+        return memberDAO.check_nickname(nick_name);
     }
 }

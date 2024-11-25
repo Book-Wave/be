@@ -26,4 +26,9 @@
         FROM `member`
         WHERE email = #{email}
     </select>
+    <select id="check_nickname" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM `member`
+        WHERE nick_name = #{nick_name}
+    </select>
 </mapper>

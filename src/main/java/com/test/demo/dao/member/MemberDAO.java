@@ -24,4 +24,5 @@ public class MemberDAO {
 
     public void register(MemberVO memberVO) { memberMapper.register(memberVO); }
 
+    public boolean check_nickname(String nick_name) { return memberMapper.check_nickname(nick_name) == 0; }
 }

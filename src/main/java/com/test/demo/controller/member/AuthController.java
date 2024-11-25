@@ -108,7 +108,6 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh_token(@RequestHeader ("Authorization") String authorization) {
-        logger.info("토큰 재발급해야함 ~ Refresh token: {}", authorization);
         try {
             String new_access_token = memberService.refresh_access_token(authorization);
             return ResponseEntity.ok(Map.of("token", new_access_token));
@@ -117,5 +116,11 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("fail");
         }
+    }
+
+    @GetMapping("/nickname/check/{nickname}")
+    public ResponseEntity<Boolean> check_nickname(@PathVariable("nickname") String nick_name) {
+        boolean is_duplicated = memberService.check_nickname(nick_name);
+        return ResponseEntity.ok(is_duplicated);
     }
 }
