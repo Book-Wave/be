@@ -14,7 +14,7 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
     @Value("${spring.jwt.secret}") String jwtSecret;
-    private final long accessTokenExpirationInMs = 1 * 60 * 1000L;;  // 토큰 유효기간 1분
+    private final long accessTokenExpirationInMs = 24 * 60 * 60 * 1000L;;  // 토큰 유효기간 1일
     private final long refreshTokenExpirationInMs = 30 * 24 * 60 * 60 * 1000L; // 리프레시 토큰 유효기간 30일
 
     public String create_token(String email, Long member_id) {
