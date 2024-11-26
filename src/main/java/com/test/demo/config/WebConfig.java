@@ -16,8 +16,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        System.out.println("WebConfigurer addCorsMappings ~");
-        // 접속 클라이언트를 허가(Restful)
         registry.addMapping("/**")
                 .allowedOrigins("52.78.186.21:3000")  // React의 개발 서버 주소
                 .allowedMethods("GET", "POST", "PUT", "DELETE")
