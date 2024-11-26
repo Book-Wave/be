@@ -9,9 +9,9 @@ name: back-end CICD
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "junyoung" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "junyoung" ]
 
 jobs:
   build:
