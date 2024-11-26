@@ -7,9 +7,6 @@ import com.test.demo.service.member.NaverOAuthService;
 import com.test.demo.vo.MemberVO;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,22 +18,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
     private final MemberService memberService;
     private final MailService mailService;
     private final KakaoOAuthService kakaoOAuthService;
     private final NaverOAuthService naverOAuthService;
 
     @GetMapping("{provider}/login")
-    public ResponseEntity<String> login(@PathVariable("provider") String provider) {
+    public ResponseEntity<String> login_oauth(@PathVariable("provider") String provider) {
         String login_url = null;
         if (provider.equals("kakao")) {
             login_url = kakaoOAuthService.kakao_login();
         } else if (provider.equals("naver")) {
             login_url = naverOAuthService.naver_login();
         }
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(login_url)).build();
+        return ResponseEntity.status(302).location(URI.create(login_url)).build(); // 새 URL은 임시적이며, 클라이언트가 기억하지 않아야 함.
     }
 
     @PostMapping("/login")
@@ -45,7 +40,7 @@ public class AuthController {
             Map<String, String> response = memberService.login(login_request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); // 인증 자격 증명 실패
         }
     }
 
@@ -58,8 +53,7 @@ public class AuthController {
             Map<String, Object> response = memberService.login_callback(provider, code, state, session);
             return ResponseEntity.ok().body(response);
         } catch (RuntimeException e) {
-            logger.error("Error during {} login process", provider, e);
-            return ResponseEntity.status(500).body(provider + " login failed.");
+            return ResponseEntity.status(500).body(provider + " login failed."); // 서버 오류
         }
     }
 
@@ -70,16 +64,14 @@ public class AuthController {
             Map<String, String> response = memberService.social_register(request_data, session);
             return ResponseEntity.ok().body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(e.getMessage());
+            return ResponseEntity.status(400).body(e.getMessage()); // 클라이언트가 잘못된 데이터를 서버로 전송하거나, 요청 형식이 규칙에 맞지 않는 경우
         } catch (Exception e) {
-            logger.error("Error during Social register process", e);
             return ResponseEntity.status(500).body("Social register failed.");
         }
     }
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody MemberVO memberVO) {
-        logger.info("Register member: {}", memberVO);
         try {
             memberService.register(memberVO);
             return ResponseEntity.status(201).body("success"); // 201 Created: 요청이 성공적으로 처리되어서 리소스가 만들어짐

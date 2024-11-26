@@ -36,8 +36,6 @@ public class KakaoOAuthService {
 
     public MemberVO get_kakao_user_info(String code) {
         try {
-            log.debug("Received authorization code: " + code);
-
             if (code == null || code.isEmpty()) {
                 throw new IllegalArgumentException("Authorization code is missing or invalid");
             }

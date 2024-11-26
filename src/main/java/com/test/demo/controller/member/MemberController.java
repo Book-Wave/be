@@ -19,9 +19,8 @@ public class MemberController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getMemberInfo(@AuthenticationPrincipal User user) {
-        log.info("getMemberInfo: {}", user);
         if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+            return ResponseEntity.status(401).body("인증되지 않은 사용자입니다.");
         }
         // 인증된 사용자의 이메일로 사용자 정보 조회
         String email = user.getUsername();

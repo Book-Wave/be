@@ -15,7 +15,6 @@ public class RedisService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     public void set(String key, Object value, int minutes) {
-        log.info("set key:{} value:{} minutes:{}", key, value, minutes);
         redisTemplate.opsForValue().set(key, value, Duration.ofMinutes(minutes));
     }
 

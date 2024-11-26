@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class MemberService {
-    private static final Logger log = LoggerFactory.getLogger(MemberService.class);
+
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberDAO memberDAO;
     private final KakaoOAuthService kakaoOAuthService;
@@ -32,6 +32,7 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private static final String pw_pattern = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$";
     // 알파벳 + 숫자 + 특수기호로 이루어진 8자리 이상
+
     public MemberVO check_member(MemberVO memberVO, String oauth_provider) {
         return memberDAO.find_by_id_provider(oauth_provider, memberVO.getOauth_id());
     }
@@ -113,9 +114,9 @@ public class MemberService {
         if (!isValidPassword(memberVO.getPassword())) {
             throw new IllegalArgumentException("Invalid password.");
         }
+
         String encoded_password = passwordEncoder.encode(memberVO.getPassword());
         memberVO.setPassword(encoded_password);
-        log.info("service member: {}", memberVO);
         memberDAO.register(memberVO);
     }
 
@@ -126,7 +127,6 @@ public class MemberService {
     }
 
     public MemberVO get_by_email(String email) {
-        log.info("get by email : {}", email);
         return memberDAO.find_by_email(email);
     }
 
@@ -142,6 +142,7 @@ public class MemberService {
         if (!passwordEncoder.matches(password, memberVO.getPassword())) {
             throw new IllegalArgumentException("Invalid password.");
         }
+
         String access_token = jwtTokenProvider.create_token(email, memberVO.getMember_id());
         String refresh_token = jwtTokenProvider.create_refresh_token(email);
         redisService.set("RT:" + email, refresh_token, 30 * 24 * 60);
@@ -152,15 +153,12 @@ public class MemberService {
 
     public String refresh_access_token(String authorization) {
         String refresh_token = authorization.substring(7);
-        log.info("refresh access token : {}", refresh_token);
         if (!jwtTokenProvider.validate_refresh_token(refresh_token)) {
             throw new IllegalArgumentException("Invalid refresh token.");
         }
 
         String email = jwtTokenProvider.getEmailFromToken(refresh_token);
-        log.info("refresh email : {}", email);
         String stored_refresh_token = (String) redisService.get("RT:" + email);
-        log.info("refresh stored refresh_token : {}", stored_refresh_token);
         if (stored_refresh_token == null || !stored_refresh_token.equals(refresh_token)) {
             throw new IllegalArgumentException("Refresh token does not match.");
         }

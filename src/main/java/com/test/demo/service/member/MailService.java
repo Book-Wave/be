@@ -4,7 +4,6 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -13,10 +12,10 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class MailService {
+    @Value("${spring.mail.username}") private String sender;
+
     private final JavaMailSender javaMailSender;
     private final Map<String, Integer> verification_code = new HashMap<>();
-
-    @Value("${spring.mail.username}") private String sender;
 
     public static int create_code() {
         return (int) (Math.random() * (90000)) + 100000;

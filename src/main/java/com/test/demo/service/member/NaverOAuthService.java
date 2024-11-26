@@ -33,8 +33,6 @@ public class NaverOAuthService {
 
     public MemberVO get_naver_user_info(String code, String state) {
         try {
-            log.debug("Received authorization code & state: ", code, state);
-
             if (code == null || code.isEmpty()) {
                 throw new IllegalArgumentException("Authorization code is missing or invalid");
             }
@@ -56,7 +54,6 @@ public class NaverOAuthService {
 
             return memberVO;
         } catch (Exception e) {
-            log.error("Error occurred while fetching user info from Naver: ", e);
             return null;
         }
     }
@@ -82,17 +79,14 @@ public class NaverOAuthService {
                 JsonNode jsonNode = objectMapper.readTree(responseBody);
                 return jsonNode.get("access_token").asText();
             } else {
-                log.error("Failed to obtain access token: {}", responseBody);
                 throw new RuntimeException("Failed to obtain access token: " + responseBody);
             }
         } catch (Exception e) {
-            log.error("Error requesting access token from Naver", e);
             throw new RuntimeException("Error requesting access token", e);
         }
     }
 
     private String request_user_info(String access_token) {
-        log.debug("Received authorization access_token: ", access_token);
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + access_token);
@@ -105,7 +99,6 @@ public class NaverOAuthService {
                 throw new RuntimeException("Failed to fetch user info: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Error requesting user info from Naver" + e.getMessage(), e);
             throw new RuntimeException("Error requesting user info", e);
         }
     }
