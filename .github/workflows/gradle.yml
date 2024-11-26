@@ -55,10 +55,7 @@ jobs:
         # 도커 작업
         script: |
           docker pull ${{ secrets.DOCKER_USERNAME }}/demo:latest
-          docker stop be || true  # 해당 ID의 컨테이너만 종료
           docker run -d -p 8080:8080 --name be ${{ secrets.DOCKER_USERNAME }}/demo:latest
-          docker rm $(docker ps --filter 'status=exited' -a -q)
-          docker image prune -a -f
 
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
