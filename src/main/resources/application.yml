@@ -27,7 +27,7 @@ spring:
           naver:
             client-id: "ezcqOn0v8G6iwjVAX5yj"
             client-secret: "zXnmjUqVQR"
-            redirect-uri: "http://52.78.186.21:80/naver/callback"
+            redirect-uri: "http://52.78.186.21/naver/callback"
             authorization-grant-type: "authorization_code"
             scope: "name, email"
             client-name: "naver"
