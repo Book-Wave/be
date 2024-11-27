@@ -19,6 +19,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 @Slf4j
 @Configuration
 @EnableWebSecurity
@@ -64,7 +67,7 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000");  // React 앱의 URL
+        configuration.addAllowedOrigin("http://52.78.186.21");  // React 앱의 URL
         configuration.addAllowedMethod("*");  // 모든 HTTP 메서드 허용
         configuration.addAllowedHeader("*");  // 모든 헤더 허용
         configuration.setAllowCredentials(true);  // 쿠키 및 인증 정보 포함 허용
@@ -73,4 +76,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);  // 모든 경로에 CORS 설정 적용
         return source;
     }
+
 }
