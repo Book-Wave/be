@@ -20,7 +20,7 @@ spring:
         registration:
           kakao:
             client-id: "876a1a6b5fad60d7b3b181b59e1a0046"
-            redirect-uri: "http://52.78.186.21:80/kakao/callback"
+            redirect-uri: "http://52.78.186.21/kakao/callback"
             authorization-grant-type: "authorization_code"
             scope: "profile, email"
             client-name: "kakao"
