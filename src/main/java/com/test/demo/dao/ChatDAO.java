@@ -2,32 +2,44 @@ package com.test.demo.dao;
 
 import com.test.demo.vo.ChatVO;
 import com.test.demo.vo.MessageType;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class ChatDAO {
-
+    private int messageId;
     private MessageType type;
     private String roomId;
     private String sender;
     private String message;
     private LocalDateTime time;
 
+
+
     // VO에서 DAO로 변환하는 메서드
-    public static ChatDAO fromVO(ChatVO chatVO) {
-        ChatDAO dao = new ChatDAO();
-        dao.setType(chatVO.getType());
-        dao.setRoomId(chatVO.getRoomId());
-        dao.setSender(chatVO.getSender());
-        dao.setMessage(chatVO.getMessage());
-        dao.setTime(chatVO.getTime());
-        return dao;
+    public ChatDAO fromVO(ChatVO chatVO) {
+        return ChatDAO.builder()
+                .messageId(chatVO.getMessageId())
+                .type(chatVO.getType())
+                .roomId(chatVO.getRoomId())
+                .sender(chatVO.getSender())
+                .message(chatVO.getMessage())
+                .time(chatVO.getTime())
+                .build();
     }
 
     // DAO에서 VO로 변환하는 메서드
     public ChatVO toVO() {
-        return new ChatVO(type, roomId, sender, message, time);
+        return ChatVO.builder()
+                .messageId(messageId)
+                .type(type)
+                .roomId(roomId)
+                .sender(sender)
+                .message(message)
+                .time(time)
+                .build();
     }
 }

@@ -13,14 +13,16 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ChatRoomVO {
     private String roomId;
-    private String roomName;
+    private String userone;
+    private String usertwo;
     private LocalDate roomDate;
 
 
-    public static ChatRoomVO create(String name) {
+    public static ChatRoomVO create(String userone, String usertwo) {
         ChatRoomVO room = new ChatRoomVO();
-        room.roomId = UUID.randomUUID().toString();
-        room.roomName = name;
+        room.roomId = UUID.randomUUID().toString(); // UUID로 고유 ID 생성
+        room.userone = userone;
+        room.usertwo = usertwo;
         room.roomDate = LocalDate.now();
         return room;
     }

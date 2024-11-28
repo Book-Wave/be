@@ -4,18 +4,29 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.test.demo.mapper.ChatMapper">
-    <insert id="insertMessage" parameterType="com.test.demo.vo.ChatVO">
+
+    <!-- 메시지 저장 -->
+    <insert id="insertMessage" parameterType="com.test.demo.dao.ChatDAO">
         INSERT INTO chat (type, room_id, sender, message, time)
         VALUES (#{type}, #{roomId}, #{sender}, #{message}, #{time})
     </insert>
 
-    <select id="selectMessagesByRoomId" resultType="com.test.demo.vo.ChatVO">
-        SELECT * FROM chat WHERE room_id = #{roomId}
+    <!-- 특정 채팅방의 메시지 조회 -->
+    <select id="selectMessagesByRoomId" parameterType="string" resultType="com.test.demo.vo.ChatVO">
+        SELECT
+            id AS id,
+            type AS type,
+            room_id AS roomId,
+            sender AS sender,
+            message AS message,
+            time AS time
+        FROM chat
+        WHERE room_id = #{roomId}
     </select>
 
-    <delete id="deleteMessage" parameterType="long">
+    <!-- 메시지 삭제 -->
+    <delete id="deleteMessage" parameterType="Long">
         DELETE FROM chat WHERE id = #{id}
     </delete>
-
 
 </mapper>

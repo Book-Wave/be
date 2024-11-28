@@ -43,7 +43,10 @@ dependencies {
     implementation 'mysql:mysql-connector-java:8.0.33'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
+//  redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+// jackson localdate 직렬화
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 }
 

@@ -12,14 +12,18 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 //stomp는 메세지 전송을 효율적으로 하기위한 프로토콜 pub/sub 구조
 //websocket위에서 작동하는 프로토콜, 클라이언트와 서버가 전송할 메세지들을 정의한다.
 @EnableWebSocketMessageBroker
+@EnableWebSocket
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-//      websocket url용 endpoint
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS();
+        // WebSocket 엔드포인트 설정, 클라이언트에서 접근할 수 있는 URL 설정
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("http://localhost:3000") // 허용할 도메인 목록
+                .withSockJS();  // SockJS 폴백 메커니즘 활성화
     }
+
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {

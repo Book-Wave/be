@@ -18,6 +18,6 @@ public interface ChatMapper {
     List<ChatVO> selectMessagesByRoomId(String roomId);
 
 //  메세지 삭제
-    void deleteMessage(Long id);
+    void deleteMessage(String id);
 
 }

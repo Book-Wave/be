@@ -1,6 +1,7 @@
 package com.test.demo.controller;
 
 
+import com.test.demo.RedisTest;
 import com.test.demo.vo.ChatVO;
 import com.test.demo.vo.ChatRoomVO;
 import com.test.demo.service.ChatRoomService;
@@ -19,6 +20,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class ChatController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -26,6 +28,8 @@ public class ChatController {
     private final ChatRoomService chatRoomService;
 
     private final ChatService chatService;
+
+    private final RedisTest redisTest;
 
 
 
@@ -38,7 +42,7 @@ public class ChatController {
 
     //  일반url
     // 모든 채팅방 목록 반환
-    @GetMapping("/roomlist")
+    @GetMapping("/rooms")
     public ResponseEntity<List<ChatRoomVO>> room() {
         try {
             List<ChatRoomVO> rooms = chatRoomService.findAllRoom();
@@ -53,10 +57,10 @@ public class ChatController {
 
     // 채팅방 생성
     // 일반 url
-    @PostMapping("/room")
-    public ResponseEntity<ChatRoomVO> createRoom(@RequestParam(value="name") String name) {
+    @PostMapping("/rooms")
+    public ResponseEntity<ChatRoomVO> createRoom(@RequestParam(value="name") String name, String nametwo) {
         try {
-            ChatRoomVO createdRoom = chatRoomService.createRoom(name);
+            ChatRoomVO createdRoom = chatRoomService.createRoom(name, nametwo);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
@@ -68,7 +72,7 @@ public class ChatController {
 
     // 특정 채팅방 조회
     // 일반 url
-    @GetMapping("/{roomId}")
+    @GetMapping("/rooms/{roomId}")
     public ResponseEntity<ChatRoomVO> roomInfo(@PathVariable String roomId) {
         try {
             ChatRoomVO room = chatRoomService.findById(roomId);
@@ -104,25 +108,43 @@ public class ChatController {
     @MessageMapping("/message")
     public void handleMessage(@Payload ChatVO message) {
         try {
-            log.info("메세지 들어옴");
+            log.info("message: {}", message);
             chatService.saveMessage(message.getRoomId(), message.getSender(), message.getMessage(), message.getType());
             simpMessagingTemplate.convertAndSend("/sub/" + message.getRoomId(), message);
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생: {}", e.getMessage());
-            // 필요 시 클라이언트에게 에러 메시지를 전송할 수 있습니다.
         }
     }
 
-//  메세지 삭제
-//    @DeleteMapping("/{roomId}/{messageId}")
-//    public ResponseEntity<Void> deleteMessage(@PathVariable Long messageId) {
-//        try {
-//            chatService.deleteMessage(messageId);
-//            return ResponseEntity.ok().build();
-//        } catch (Exception e) {
-//            log.error("메시지 삭제 중 오류 발생: {}", e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//        }
-//    }
+    // 특정 채팅방의 메시지 조회
+    @GetMapping("/rooms/{roomId}/messages")
+    public ResponseEntity<List<ChatVO>> getMessagesByRoomId(@PathVariable String roomId) {
+        try {
+            System.out.println("메세지 조회");
+            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId);
+            return ResponseEntity.ok(messages);
+        } catch (Exception e) {
+            log.error("메시지 조회 중 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // 메시지 삭제
+    @DeleteMapping("/rooms/{roomId}/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable String roomId, @PathVariable Long messageId) {
+        try {
+            chatService.deleteMessage(roomId,messageId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("메시지 삭제 중 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/test")
+    public void test() {
+        redisTest.testRedis();
+
+    }
 
 }
