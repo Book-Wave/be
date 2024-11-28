@@ -1,7 +1,7 @@
-package com.test.demo.dao;
+package com.test.demo.dao.chat;
 
-import com.test.demo.vo.ChatVO;
-import com.test.demo.vo.MessageType;
+import com.test.demo.vo.chat.ChatVO;
+import com.test.demo.vo.chat.MessageType;
 import lombok.Builder;
 import lombok.Data;
 

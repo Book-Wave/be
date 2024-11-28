@@ -1,8 +1,8 @@
-package com.test.demo.service;
+package com.test.demo.service.chat;
 
-import com.test.demo.dao.ChatDAO;
-import com.test.demo.mapper.ChatMapper;
-import org.springframework.scheduling.annotation.Scheduled;
+import com.test.demo.dao.chat.ChatDAO;
+import com.test.demo.mapper.chat.ChatMapper;
+import com.test.demo.service.RedisService;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;

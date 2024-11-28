@@ -1,7 +1,7 @@
-package com.test.demo.mapper;
+package com.test.demo.mapper.chat;
 
-import com.test.demo.dao.ChatDAO;
-import com.test.demo.vo.ChatVO;
+import com.test.demo.dao.chat.ChatDAO;
+import com.test.demo.vo.chat.ChatVO;
 import org.apache.ibatis.annotations.Mapper;
 
 
@@ -18,6 +18,6 @@ public interface ChatMapper {
     List<ChatVO> selectMessagesByRoomId(String roomId);
 
 //  메세지 삭제
-    void deleteMessage(String id);
+    void deleteMessage(long id);
 
 }

@@ -1,6 +1,6 @@
-package com.test.demo.dao;
+package com.test.demo.dao.chat;
 
-import com.test.demo.vo.ChatRoomVO;
+import com.test.demo.vo.chat.ChatRoomVO;
 import lombok.Data;
 
 import java.time.LocalDate;

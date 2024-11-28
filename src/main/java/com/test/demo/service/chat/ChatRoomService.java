@@ -1,9 +1,9 @@
-package com.test.demo.service;
+package com.test.demo.service.chat;
 
-import com.test.demo.dao.ChatRoomDAO;
-import com.test.demo.mapper.ChatRoomMapper;
-import com.test.demo.vo.ChatRoomVO;
-import jakarta.annotation.PostConstruct;
+import com.test.demo.dao.chat.ChatRoomDAO;
+import com.test.demo.mapper.chat.ChatRoomMapper;
+import com.test.demo.service.RedisService;
+import com.test.demo.vo.chat.ChatRoomVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

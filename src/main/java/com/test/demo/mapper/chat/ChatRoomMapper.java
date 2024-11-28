@@ -1,8 +1,8 @@
-package com.test.demo.mapper;
+package com.test.demo.mapper.chat;
 
 
-import com.test.demo.dao.ChatRoomDAO;
-import com.test.demo.vo.ChatRoomVO;
+import com.test.demo.dao.chat.ChatRoomDAO;
+import com.test.demo.vo.chat.ChatRoomVO;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

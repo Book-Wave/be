@@ -1,4 +1,4 @@
-package com.test.demo.vo;
+package com.test.demo.vo.chat;
 
 
 import lombok.AllArgsConstructor;

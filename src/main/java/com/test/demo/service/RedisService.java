@@ -2,8 +2,8 @@ package com.test.demo.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.test.demo.dao.ChatRoomDAO;
-import com.test.demo.vo.ChatVO;
+import com.test.demo.dao.chat.ChatRoomDAO;
+import com.test.demo.vo.chat.ChatVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;

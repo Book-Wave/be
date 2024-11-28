@@ -2,10 +2,10 @@ package com.test.demo.controller;
 
 
 import com.test.demo.RedisTest;
-import com.test.demo.vo.ChatVO;
-import com.test.demo.vo.ChatRoomVO;
-import com.test.demo.service.ChatRoomService;
-import com.test.demo.service.ChatService;
+import com.test.demo.vo.chat.ChatVO;
+import com.test.demo.vo.chat.ChatRoomVO;
+import com.test.demo.service.chat.ChatRoomService;
+import com.test.demo.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
