@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.test.demo.dao.chat.ChatRoomDAO;
 import com.test.demo.vo.chat.ChatVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RedisService {
@@ -56,7 +58,7 @@ public class RedisService {
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
     }
 
-    public void clear () {
+    public void clear() {
         redisTemplate.delete(Objects.requireNonNull(redisTemplate.keys("*")));
     }
 

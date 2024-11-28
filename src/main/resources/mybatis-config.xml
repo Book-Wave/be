@@ -5,10 +5,10 @@
 
 <configuration>
     <typeAliases>
-
+        <package name="com.test.demo.vo.MemberVO"/>
     </typeAliases>
 
-    <!--    <mappers>-->
-    <!--        <mapper resource="mapper/*.xml"/>-->
-    <!--    </mappers>-->
+<!--    <mappers>-->
+<!--        <mapper resource="mapper/*.xml"/>-->
+<!--    </mappers>-->
 </configuration>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.test.demo.mapper.MemberMapper">
+    <insert id="save" parameterType="com.test.demo.vo.MemberVO">
+        INSERT INTO `member`(oauth_provider, oauth_id, name, email, nick_name, birth_date, gender)
+        VALUES(#{oauth_provider}, #{oauth_id}, #{name}, #{email}, #{nick_name}, #{birth_date}, #{gender})
+    </insert>
+
+    <insert id="register" parameterType="com.test.demo.vo.MemberVO">
+        INSERT INTO `member`(email, `password`, `name`, nick_name, birth_date, gender)
+        VALUES (#{email}, #{password}, #{name}, #{nick_name}, #{birth_date}, #{gender})
+    </insert>
+
+    <select id="find_by_id_provider" resultType="com.test.demo.vo.MemberVO">
+        SELECT *
+        FROM `member`
+        WHERE oauth_provider = #{oauth_provider}
+        AND oauth_id = #{oauth_id}
+    </select>
+
+    <select id="find_by_email" resultType="com.test.demo.vo.MemberVO">
+        SELECT *
+        FROM `member`
+        WHERE email = #{email}
+    </select>
+    <select id="check_nickname" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM `member`
+        WHERE nick_name = #{nick_name}
+    </select>
+</mapper>

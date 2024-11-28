@@ -17,14 +17,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        System.out.println("WebConfigurer addCorsMappings ~");
-        // 접속 클라이언트를 허가(Restful)
         registry.addMapping("/**")
+                .allowedOriginPatterns("http://52.78.186.21", "http://52.78.186.21:8080") // nginx ,react
                 .allowedOriginPatterns("http://localhost:3000")
                 .allowedMethods("GET", "POST", "PUT", "DELETE")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .allowCredentials(true)
+                .maxAge(3600);
     }
-
-
 }
