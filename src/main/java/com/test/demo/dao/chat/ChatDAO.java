@@ -1,45 +1,48 @@
 package com.test.demo.dao.chat;
 
+import com.test.demo.mapper.chat.ChatMapper;
 import com.test.demo.vo.chat.ChatVO;
-import com.test.demo.vo.chat.MessageType;
-import lombok.Builder;
-import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
-@Data
-@Builder
+@Repository
 public class ChatDAO {
-    private int messageId;
-    private MessageType type;
-    private String roomId;
-    private String sender;
-    private String message;
-    private LocalDateTime time;
 
+    // chatMapper를 인스턴스 변수로 변경하고, @Autowired로 의존성 주입 받기
+    @Autowired
+    private ChatMapper chatMapper;
 
-
-    // VO에서 DAO로 변환하는 메서드
-    public ChatDAO fromVO(ChatVO chatVO) {
-        return ChatDAO.builder()
-                .messageId(chatVO.getMessageId())
-                .type(chatVO.getType())
-                .roomId(chatVO.getRoomId())
-                .sender(chatVO.getSender())
-                .message(chatVO.getMessage())
-                .time(chatVO.getTime())
-                .build();
+    // 전송한 메시지 저장
+    public void insertMessage(ChatVO chatVO) {
+        if (chatMapper != null) {
+            chatMapper.insertMessage(chatVO);
+        } else {
+            // chatMapper가 null일 때의 처리
+            System.out.println("chatMapper is null, skipping insert");
+        }
     }
 
-    // DAO에서 VO로 변환하는 메서드
-    public ChatVO toVO() {
-        return ChatVO.builder()
-                .messageId(messageId)
-                .type(type)
-                .roomId(roomId)
-                .sender(sender)
-                .message(message)
-                .time(time)
-                .build();
+    // 채팅 내역 불러오기
+    public List<ChatVO> selectMessagesByRoomId(String roomId) {
+        if (chatMapper != null) {
+            return chatMapper.selectMessagesByRoomId(roomId);
+        } else {
+            // chatMapper가 null일 때, 빈 리스트 반환
+            System.out.println("chatMapper is null, returning empty list");
+            return Collections.emptyList();
+        }
+    }
+
+    // 메시지 삭제
+    public void deleteMessage(long id) {
+        if (chatMapper != null) {
+            chatMapper.deleteMessage(id);
+        } else {
+            // chatMapper가 null일 때의 처리
+            System.out.println("chatMapper is null, skipping delete");
+        }
     }
 }

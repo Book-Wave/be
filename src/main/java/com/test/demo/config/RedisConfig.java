@@ -3,6 +3,7 @@ package com.test.demo.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+@Slf4j
 @Configuration
 @EnableRedisRepositories
 public class RedisConfig {
@@ -26,6 +28,7 @@ public class RedisConfig {
     }
 
     @Bean
+
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
@@ -39,12 +42,17 @@ public class RedisConfig {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO-8601 형식 사용
 
 
+
         // Jackson2JsonRedisSerializer 설정
         Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
         serializer.setObjectMapper(objectMapper);  // ObjectMapper 설정 (deprecated 된 방식)
         // RedisTemplate에 직렬화 및 역직렬화 설정
+        log.info("직렬화 전: {}", serializer.toString());
+
         redisTemplate.setValueSerializer(serializer); // 값에 대해 JSON 직렬화
+        log.info("직렬화 후: {}", serializer.toString());
         redisTemplate.setHashValueSerializer(serializer); // Hash의 값에 대해 JSON 직렬화
+        log.info("역직렬화 후: {}",serializer.toString());
 
         return redisTemplate;
     }

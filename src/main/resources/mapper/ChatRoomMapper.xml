@@ -18,13 +18,8 @@
         WHERE room_id = #{room_id}
     </select>
 
-    <!-- 채팅방 생성 -->
-    <insert id="insertChatRoom" parameterType="com.test.demo.vo.chat.ChatRoomVO">
-        INSERT INTO chat_rooms (room_id, room_name, userone, usertwo, room_date)
-        VALUES (#{roomId}, #{roomName}, #{userone}, #{usertwo}, #{roomDate})
-    </insert>
 
-    <insert id="insertOrUpdateChatRoom" parameterType="com.test.demo.dao.chat.ChatRoomDAO">
+    <insert id="insertOrUpdateChatRoom" parameterType="com.test.demo.vo.chat.ChatRoomVO">
         INSERT INTO chat_rooms (room_id, room_name, room_date)
         VALUES (#{roomId}, #{roomName}, #{roomDate})
         ON DUPLICATE KEY UPDATE

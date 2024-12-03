@@ -38,13 +38,14 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-//  웹소캣 의존성
+
+    //  웹소캣 의존성
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.webjars:sockjs-client:1.1.2'
     implementation 'org.webjars:stomp-websocket:2.3.3-1'
-//  mybatis 스타터
+    //  mybatis 스타터
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
-//  mysql jdbc
+    //  mysql jdbc
     implementation 'mysql:mysql-connector-java:8.0.33'
 
     // Security 의존성
@@ -63,7 +64,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-// jackson localdate 직렬화
+    // jackson localdate 직렬화
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 }

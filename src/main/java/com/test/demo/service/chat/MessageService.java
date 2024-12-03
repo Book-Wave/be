@@ -1,8 +1,8 @@
 package com.test.demo.service.chat;
 
 import com.test.demo.dao.chat.ChatDAO;
-import com.test.demo.mapper.chat.ChatMapper;
 import com.test.demo.service.RedisService;
+import com.test.demo.vo.chat.ChatVO;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -11,11 +11,11 @@ import java.util.Set;
 public class MessageService {
 
     private final RedisService redisService;
-    private final ChatMapper chatMapper;
+    private final ChatDAO chatDAO;
 
-    public MessageService(RedisService redisService, ChatMapper chatMapper) {
+    public MessageService(RedisService redisService, ChatDAO chatDAO) {
         this.redisService = redisService;
-        this.chatMapper = chatMapper;
+        this.chatDAO = chatDAO;
     }
 
 
@@ -25,9 +25,9 @@ public class MessageService {
 
         for (String key : keys) {
             Object message = redisService.get(key);
-            if(message instanceof ChatDAO) {
-                ChatDAO chatDAO = (ChatDAO) message;
-                chatMapper.insertMessage(chatDAO);
+            if(message instanceof ChatVO) {
+                ChatVO chatVO = (ChatVO) message;
+                chatDAO.insertMessage(chatVO);
                 redisService.delete(key);
             }
         }

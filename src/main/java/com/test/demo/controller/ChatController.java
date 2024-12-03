@@ -9,6 +9,7 @@ import com.test.demo.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -16,6 +17,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -42,10 +44,11 @@ public class ChatController {
 
     //  일반url
     // 모든 채팅방 목록 반환
-    @GetMapping("/rooms")
+    @GetMapping(value = "/rooms")
     public ResponseEntity<List<ChatRoomVO>> room() {
         try {
             List<ChatRoomVO> rooms = chatRoomService.findAllRoom();
+            log.info(rooms.toString());
             return ResponseEntity.ok(rooms);
         } catch (Exception e) {
             log.error("채팅방 목록 조회 중 오류 발생: {}", e.getMessage());
@@ -58,13 +61,19 @@ public class ChatController {
     // 채팅방 생성
     // 일반 url
     @PostMapping("/rooms")
-    public ResponseEntity<ChatRoomVO> createRoom(@RequestParam(value="name") String name, String nametwo) {
+    public ResponseEntity<String> createRoom(@RequestBody Map<String, String> requestBody) {
         try {
-            ChatRoomVO createdRoom = chatRoomService.createRoom(name, nametwo);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
+            String userone = requestBody.get("userone");
+            String usertwo = requestBody.get("usertwo");
+            String roomname = requestBody.get("roomName");
+//            if (name == null || name.isEmpty()) {
+//                throw new IllegalArgumentException("name은 필수 값입니다.");
+//            }
+            chatRoomService.createRoom(roomname, userone, usertwo);
+            return ResponseEntity.ok("sucess");
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(500).body("fail "+e.getMessage());
         }
     }
 
@@ -118,10 +127,12 @@ public class ChatController {
 
     // 특정 채팅방의 메시지 조회
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<List<ChatVO>> getMessagesByRoomId(@PathVariable String roomId) {
+    public ResponseEntity<List<ChatVO>> getMessagesByRoomId(@PathVariable String roomId, @RequestParam String sender) {
         try {
             System.out.println("메세지 조회");
-            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId);
+            log.info("sender = {}",sender);
+            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId, sender);
+            log.info(messages.toString());
             return ResponseEntity.ok(messages);
         } catch (Exception e) {
             log.error("메시지 조회 중 오류 발생: {}", e.getMessage());

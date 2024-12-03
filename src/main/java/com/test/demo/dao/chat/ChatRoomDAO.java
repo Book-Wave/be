@@ -1,29 +1,26 @@
 package com.test.demo.dao.chat;
 
+import com.test.demo.mapper.chat.ChatRoomMapper;
 import com.test.demo.vo.chat.ChatRoomVO;
-import lombok.Data;
+import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 
-@Data
+
+
+@Repository
 public class ChatRoomDAO {
-    private String roomId;
-    private String userone;
-    private String usertwo;
-    private LocalDate roomDate;
 
-    // VO에서 DAO로 변환하는 메서드
-    public static ChatRoomDAO fromVO(ChatRoomVO chatRoomVO) {
-        ChatRoomDAO dao = new ChatRoomDAO();
-        dao.setRoomId(chatRoomVO.getRoomId());
-        dao.setUserone(chatRoomVO.getUserone());
-        dao.setUsertwo(chatRoomVO.getUsertwo());
-        dao.setRoomDate(chatRoomVO.getRoomDate());
-        return dao;
+    private final ChatRoomMapper chatRoomMapper;
+
+
+    public ChatRoomDAO(ChatRoomMapper chatRoomMapper) {
+        this.chatRoomMapper = chatRoomMapper;
     }
 
-    // DAO에서 VO로 변환하는 메서드
-    public ChatRoomVO toVO() {
-        return new ChatRoomVO(roomId, userone, usertwo, roomDate);
-    }
+    //  전송한 메세지 저장
+    public void insertOrUpdateChatRoom(ChatRoomVO chatRoomVO) {chatRoomMapper.insertOrUpdateChatRoom(chatRoomVO);};
+
+
+
+
 }

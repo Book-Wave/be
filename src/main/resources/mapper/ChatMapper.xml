@@ -6,7 +6,7 @@
 <mapper namespace="com.test.demo.mapper.chat.ChatMapper">
 
     <!-- 메시지 저장 -->
-    <insert id="insertMessage" parameterType="com.test.demo.dao.chat.ChatDAO">
+    <insert id="insertMessage" parameterType="com.test.demo.vo.chat.ChatVO">
         INSERT INTO chat (type, room_id, sender, message, time)
         VALUES (#{type}, #{roomId}, #{sender}, #{message}, #{time})
     </insert>

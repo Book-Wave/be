@@ -1,7 +1,7 @@
 package com.test.demo.service.chat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.test.demo.dao.chat.ChatRoomDAO;
-import com.test.demo.mapper.chat.ChatRoomMapper;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.chat.ChatRoomVO;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -17,7 +20,8 @@ import java.util.*;
 public class ChatRoomService {
     private final RedisService redisService; // RedisService 주입
     private static final String CHAT_ROOM_PREFIX = "chatroom:";
-    private final ChatRoomMapper chatRoomMapper;
+    private final ChatRoomDAO chatRoomDAO;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     //채팅방 불러오기
     public List<ChatRoomVO> findAllRoom() {
@@ -25,9 +29,13 @@ public class ChatRoomService {
             List<ChatRoomVO> result = new ArrayList<>();
             Set<String> keys = redisService.keys(CHAT_ROOM_PREFIX + "*");
             for (String key : keys) {
-                ChatRoomDAO roomDAO = (ChatRoomDAO) redisService.get(key);  // 변환된 ChatRoomDAO 객체
-                if (roomDAO != null) {
-                    result.add(roomDAO.toVO());
+                // Redis에서 가져온 데이터를 Map으로 읽고 ChatRoomVO로 변환
+                Object redisData = redisService.get(key);
+                if (redisData != null) {
+                    // ObjectMapper를 사용해 LinkedHashMap을 ChatRoomVO로 변환
+
+                    ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
+                    result.add(roomVO);
                 }
             }
             Collections.reverse(result); // 최근 생성 순으로 정렬
@@ -41,31 +49,33 @@ public class ChatRoomService {
     //채팅방 하나 불러오기
     public ChatRoomVO findById(String roomId) {
         try {
-            ChatRoomDAO roomDAO = (ChatRoomDAO) redisService.get(CHAT_ROOM_PREFIX + roomId);
-            if (roomDAO == null) {
+
+            Object redisData = redisService.get(CHAT_ROOM_PREFIX + roomId);
+
+            if (redisData == null) {
                 throw new NoSuchElementException("채팅방을 찾을 수 없습니다: " + roomId);
             }
-            return roomDAO.toVO();
+            ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
+            return roomVO;
         } catch (Exception e) {
             log.error("채팅방 조회 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("채팅방 조회 중 오류가 발생했습니다.", e);
         }
     }
 
-    //채팅방 생성
-    public ChatRoomVO createRoom(String name, String nametwo) {
-        try {
-            if(nametwo == null || nametwo.isEmpty()) {
-                nametwo = "";
-            } else {
-                ChatRoomVO roomVO = ChatRoomVO.create(name, nametwo);
-            }
-            ChatRoomVO roomVO = ChatRoomVO.create(name, nametwo);
-            ChatRoomDAO roomDAO = ChatRoomDAO.fromVO(roomVO);
 
-            log.info("새로운 채팅방 생성: ID = {}", roomDAO.getRoomId());
-            redisService.set(CHAT_ROOM_PREFIX + roomDAO.getRoomId(), roomDAO, 3600); // Redis에 저장 (TTL 1시간)
-            return roomVO;
+    //채팅방 생성
+    public void createRoom(String roomname, String userone, String usertwo) {
+        try {
+            if(usertwo == null || usertwo.isEmpty()) {
+                usertwo = "";
+            }
+
+            String roomDate = LocalDateTime.now().format(formatter);
+            ChatRoomVO roomVO = new ChatRoomVO(UUID.randomUUID().toString(),roomname, userone, usertwo , roomDate);
+
+            log.info("새로운 채팅방 생성: ID = {}", roomVO.getRoomId());
+            redisService.set(CHAT_ROOM_PREFIX + roomVO.getRoomId(), roomVO, 3600); // Redis에 저장 (TTL 1시간)
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("채팅방 생성 중 오류가 발생했습니다.", e);
@@ -77,11 +87,11 @@ public class ChatRoomService {
         Set<String> keys = redisService.keys(CHAT_ROOM_PREFIX + "*");
         for (String key : keys) {
             try {
-                ChatRoomDAO roomDAO = (ChatRoomDAO) redisService.get(key);
-                if (roomDAO != null) {
+                ChatRoomVO roomVO = (ChatRoomVO) redisService.get(key);
+                if (roomVO != null) {
                     // MyBatis 매퍼를 통해 DB에 저장
-                    chatRoomMapper.insertOrUpdateChatRoom(roomDAO);
-                    log.info("채팅방 동기화 완료: {}", roomDAO.getRoomId());
+                    chatRoomDAO.insertOrUpdateChatRoom(roomVO);
+                    log.info("채팅방 동기화 완료: {}", roomVO.getRoomId());
                 }
             } catch (Exception e) {
                 log.error("Redis에서 DB로 채팅방 동기화 중 오류 발생: {}", e.getMessage());

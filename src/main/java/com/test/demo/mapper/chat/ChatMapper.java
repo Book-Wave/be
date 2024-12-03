@@ -12,7 +12,7 @@ import java.util.List;
 public interface ChatMapper {
 
 //  전송한 메세지 저장
-    void insertMessage(ChatDAO chatDAO);
+    void insertMessage(ChatVO chatVO);
 
 //  채팅 내역 불러오기
     List<ChatVO> selectMessagesByRoomId(String roomId);

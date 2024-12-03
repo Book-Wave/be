@@ -20,8 +20,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket 엔드포인트 설정, 클라이언트에서 접근할 수 있는 URL 설정
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:3000") // 허용할 도메인 목록
-                .withSockJS();  // SockJS 폴백 메커니즘 활성화
+                .setAllowedOriginPatterns("*");// 허용할 도메인 목록
+
+//                .withSockJS();  // SockJS 폴백 메커니즘 활성화
     }
 
 

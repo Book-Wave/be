@@ -10,6 +10,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +27,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.sql.DataSource;
+import java.time.format.DateTimeFormatter;
 
 @Configuration
 @EnableTransactionManagement
@@ -41,6 +43,7 @@ public class RootConfig {
     @Value("${spring.datasource.url}") String url;
     @Value("${spring.datasource.username}") String username;
     @Value("${spring.datasource.password}") String password;
+
 
 
     @Bean
@@ -83,5 +86,9 @@ public class RootConfig {
     }
 
 
+    @Bean
+    public DateTimeFormatter dateTimeFormatter() {
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    }
 
 }
