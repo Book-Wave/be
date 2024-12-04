@@ -37,18 +37,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화 (API 사용 시 필요)
                 .authorizeRequests()
-                .requestMatchers("/book/auth/**", "/login", "/oauth2/**").permitAll() // 인증 없이 접근할 수 있는 경로
+                .requestMatchers("/book/auth/**", "/login", "/oauth2/**", "/api/rooms","/ws").permitAll() // 인증 없이 접근할 수 있는 경로
                 .requestMatchers(HttpMethod.GET, "/book/member/me").authenticated() // 인증된 사용자만 접근 가능한 경로
-                .anyRequest().denyAll(); // 나머지 경로는 모두 접근 거부
-
+                .requestMatchers(HttpMethod.GET, "/api/rooms/{roomId}/messages").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/rooms/{roomId}").authenticated()
+                .anyRequest().denyAll() // 나머지 경로는 모두 접근 거부
+                .and()
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
         // JWT 인증 필터 추가
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         // OAuth 2.0 로그인 설정
         http.oauth2Login(oauth2 -> oauth2
                 .defaultSuccessUrl("/api/member/me") // 로그인 성공 후 리다이렉트 URL 설정
-                .failureUrl("/login?error=true") // 로그인 실패 시 리다이렉트 URL 설정
-        );
+                .failureUrl("/login?error=true")); // 로그인 실패 시 리다이렉트 URL 설정
+
 
         return http.build();  // http.build()로 반환
     }
@@ -68,6 +71,9 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOriginPattern("http://52.78.186.21"); // React 앱의 URL
+        configuration.addAllowedOriginPattern("ws://52.78.186.21");;
+//        configuration.addAllowedOriginPattern("http://localhost");
+//        configuration.addAllowedOriginPattern("ws://localhost");
         configuration.addAllowedMethod("*");  // 모든 HTTP 메서드 허용
         configuration.addAllowedHeader("*");  // 모든 헤더 허용
         configuration.setAllowCredentials(true);  // 쿠키 및 인증 정보 포함 허용

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.test.demo.mapper.chat.ChatRoomMapper">
+
+    <!-- 특정 채팅방 조회 -->
+    <select id="getChatRoomById" parameterType="long" resultType="com.test.demo.vo.chat.ChatRoomVO">
+        SELECT
+            room_id AS roomId,
+            room_name AS roomName,
+            userone AS userone,
+            usertwo AS usertwo,
+            room_date AS roomDate
+        FROM chat_rooms
+        WHERE room_id = #{room_id}
+    </select>
+
+
+    <insert id="insertOrUpdateChatRoom" parameterType="com.test.demo.vo.chat.ChatRoomVO">
+        INSERT INTO chat_rooms (room_id, room_name, room_date)
+        VALUES (#{roomId}, #{roomName}, #{roomDate})
+        ON DUPLICATE KEY UPDATE
+                             room_name = VALUES(room_name),
+                             room_date = VALUES(room_date);
+    </insert>
+
+
+</mapper>
