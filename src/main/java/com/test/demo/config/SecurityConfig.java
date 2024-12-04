@@ -37,10 +37,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화 (API 사용 시 필요)
                 .authorizeRequests()
-                .requestMatchers("/book/auth/**", "/login", "/oauth2/**", "/api/rooms","/ws").permitAll() // 인증 없이 접근할 수 있는 경로
+                .requestMatchers("/book/auth/**", "/login", "/oauth2/**", "/book/chat/rooms","/ws").permitAll() // 인증 없이 접근할 수 있는 경로
                 .requestMatchers(HttpMethod.GET, "/book/member/me").authenticated() // 인증된 사용자만 접근 가능한 경로
-                .requestMatchers(HttpMethod.GET, "/api/rooms/{roomId}/messages").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/rooms/{roomId}").authenticated()
+                .requestMatchers(HttpMethod.GET, "/book/chat/rooms/{roomId}/messages").authenticated()
+                .requestMatchers(HttpMethod.GET, "/book/chat/rooms/{roomId}").authenticated()
                 .anyRequest().denyAll() // 나머지 경로는 모두 접근 거부
                 .and()
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()));
