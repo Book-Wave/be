@@ -70,11 +70,10 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.addAllowedOriginPattern("http://52.78.186.21"); // React 앱의 URL
-        configuration.addAllowedOriginPattern("http://localhost:8080");
-        configuration.addAllowedOriginPattern("http://localhost:3000");
-        configuration.addAllowedOriginPattern("ws://localhost:8080");
-        configuration.addAllowedOriginPattern("ws://localhost:3000");
+        configuration.addAllowedOriginPattern("http://52.78.186.21"); // React 앱의 URL
+        configuration.addAllowedOriginPattern("ws://52.78.186.21");;
+//        configuration.addAllowedOriginPattern("http://localhost");
+//        configuration.addAllowedOriginPattern("ws://localhost");
         configuration.addAllowedMethod("*");  // 모든 HTTP 메서드 허용
         configuration.addAllowedHeader("*");  // 모든 헤더 허용
         configuration.setAllowCredentials(true);  // 쿠키 및 인증 정보 포함 허용
