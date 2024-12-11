@@ -1,37 +1,69 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.test.demo.dao.ItemDao">
 
-    <!-- 상품 목록 조회 -->
-    <select id="selectItems" parameterType="map" resultType="com.test.demo.vo.ItemVo">
-        SELECT * FROM items
-        WHERE name LIKE CONCAT('%', #{search}, '%')
-        ORDER BY ${sortField} ${sortOrder}
-        LIMIT #{offset}, #{limit}
-    </select>
-
-    <!-- 특정 상품 상세 정보 조회 -->
-    <select id="selectItemDetail" parameterType="int" resultType="com.test.demo.vo.ItemVo">
-        SELECT * FROM items WHERE id = #{itemId}
-    </select>
-
-    <!-- 상품 등록 -->
+    <!-- 데이터 삽입 -->
     <insert id="insertItem" parameterType="com.test.demo.vo.ItemVo">
-        INSERT INTO items (name, publisher, author, price)
-        VALUES (#{name}, #{publisher}, #{author}, #{price})
+        INSERT INTO item (item_name, category, seller_id, buyer_id, view, trade, status, price, reg_date, mod_date)
+        VALUES (#{itemName}, #{category}, #{sellerId}, #{buyerId}, #{view}, #{trade}, #{status}, #{price}, NOW(), NOW())
     </insert>
 
-    <!-- 상품 수정 -->
+
+    <!-- 데이터 조회 -->
+    <select id="selectItems" resultType="com.test.demo.vo.ItemVo">
+        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, reg_date, mod_date
+        FROM item
+    </select>
+
+    <!-- 특정 데이터 조회 -->
+    <select id="selectItemDetail" parameterType="int" resultType="com.test.demo.vo.ItemVo">
+        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, reg_date, mod_date
+        FROM item
+        WHERE item_id = #{itemId}
+    </select>
+
+    <!-- 데이터 수정 -->
     <update id="updateItem" parameterType="com.test.demo.vo.ItemVo">
-        UPDATE items
-        SET name = #{name}, publisher = #{publisher}, author = #{author}, price = #{price}
-        WHERE id = #{id}
+        UPDATE item
+        SET item_name = #{itemName}, category = #{category}, seller_id = #{sellerId}, buyer_id = #{buyerId},
+            view = #{view}, trade = #{trade}, status = #{status}, price = #{price}, mod_date = NOW()
+        WHERE item_id = #{itemId}
     </update>
 
-    <!-- 상품 삭제 -->
+    <!-- 데이터 삭제 -->
     <delete id="deleteItem" parameterType="int">
-        DELETE FROM items WHERE id = #{itemId}
+        DELETE FROM item WHERE item_id = #{itemId}
     </delete>
+
+    <!-- 조회수 증가 -->
+    <update id="increaseView" parameterType="int">
+        UPDATE item
+        SET view = view + 1
+        WHERE item_id = #{itemId}
+    </update>
+
+    <!-- 조회수 가져오기 -->
+    <select id="getViewCount" parameterType="int" resultType="int">
+        SELECT view
+        FROM item
+        WHERE item_id = #{itemId}
+    </select>
+
+    <!-- 찜 추가 -->
+    <insert id="addZzim" parameterType="map">
+        INSERT INTO zzim (item_id, buyer_id)
+        VALUES (#{itemId}, #{buyerId})
+    </insert>
+
+
+    <!-- 상품 정가 가져오기 -->
+    <select id="getOriPrice" parameterType="int" resultType="int">
+        SELECT ori_price
+        FROM detail
+        WHERE item_id = #{itemId}
+    </select>
 
 </mapper>
