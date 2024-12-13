@@ -1,5 +1,6 @@
 package com.test.demo.config.jwt;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,36 +28,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        try {
-            String token = jwtTokenProvider.resolveToken(request);
-            logger.debug("JWT 토큰 추출: {}", token);
-
-            if (token != null) {
-                try {
-                    if (jwtTokenProvider.validate_token(token)) {
-                        String email = jwtTokenProvider.getEmailFromToken(token);
-                        logger.debug("토큰에서 추출된 사용자 이메일: {}", email);
-
-                        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                        logger.debug("UserDetailsService로 로드된 사용자 정보: {}", userDetails);
-
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                        logger.debug("SecurityContext에 인증 정보 저장 완료");
-                    }
-                } catch (io.jsonwebtoken.ExpiredJwtException e) {
-                    // 토큰 만료
-                    logger.warn("만료된 토큰 사용 시도: {}", e.getMessage());
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Access token expired");
-                    return; // 체인 중단
+        if (request.getRequestURI().startsWith("/book/auth/")) {
+            chain.doFilter(request, response); // 필터 검사 제외
+            return;
+        }
+        logger.info("JwtAuthenticationFilter 내부에 진입");
+        String access_token = jwtTokenProvider.resolveToken(request);
+        if (access_token != null) {
+            try {
+                if (jwtTokenProvider.validate_token(access_token)) {
+                    String email = jwtTokenProvider.getEmailFromToken(access_token);
+                    String nickname = jwtTokenProvider.getNicknameFromToken(access_token);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(email, null, null);
+                    authentication.setDetails(nickname);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
+            } catch (ExpiredJwtException e) {
+                // 만료된 토큰인 경우
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Unauthorized: Token expired");
+                return;
+            } catch (Exception e) {
+                // 다른 예외인 경우 (잘못된 토큰 등)
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Unauthorized: Invalid token");
+                return;
             }
-        } catch (Exception e) {
-            logger.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않거나 만료된 token");
+        } else {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Unauthorized: Missing token");
+            return;
         }
         chain.doFilter(request, response);
     }
