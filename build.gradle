@@ -43,6 +43,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.webjars:sockjs-client:1.1.2'
     implementation 'org.webjars:stomp-websocket:2.3.3-1'
+    //  mybatis 스타터
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    //  mysql jdbc
+    implementation 'mysql:mysql-connector-java:8.0.33'
 
     // Security 의존성
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -58,8 +62,16 @@ dependencies {
 
     // AOP
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+    // jackson localdate 직렬화
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+}
+
+//-parameters 플래그 추가
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-parameters'
 }
 
 tasks.named('test') {
