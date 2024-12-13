@@ -19,11 +19,13 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ChatRoomService {
     private final RedisService redisService; // RedisService 주입
-    private static final String CHAT_ROOM_PREFIX = "chatroom:";
+    private static final String CHAT_ROOM_PREFIX = "roomId:";
     private final ChatRoomDAO chatRoomDAO;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    //채팅방 불러오기
+
+
+    // 채팅방 목록 불러오기
     public List<ChatRoomVO> findAllRoom() {
         try {
             List<ChatRoomVO> result = new ArrayList<>();
@@ -32,8 +34,6 @@ public class ChatRoomService {
                 // Redis에서 가져온 데이터를 Map으로 읽고 ChatRoomVO로 변환
                 Object redisData = redisService.get(key);
                 if (redisData != null) {
-                    // ObjectMapper를 사용해 LinkedHashMap을 ChatRoomVO로 변환
-
                     ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
                     result.add(roomVO);
                 }
@@ -46,42 +46,42 @@ public class ChatRoomService {
         }
     }
 
-    //채팅방 하나 불러오기
+    // 특정 채팅방 조회
     public ChatRoomVO findById(String roomId) {
         try {
-
             Object redisData = redisService.get(CHAT_ROOM_PREFIX + roomId);
 
             if (redisData == null) {
                 throw new NoSuchElementException("채팅방을 찾을 수 없습니다: " + roomId);
             }
-            ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
-            return roomVO;
+            return new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
         } catch (Exception e) {
             log.error("채팅방 조회 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("채팅방 조회 중 오류가 발생했습니다.", e);
         }
     }
 
-
-    //채팅방 생성
-    public void createRoom(String roomname, String userone, String usertwo) {
+    // 채팅방 생성
+    public void createRoom(String userOne, String userTwo) {
+        String roomId = ChatKey.generateSortedKey("roomId",userOne, userTwo);
         try {
-            if(usertwo == null || usertwo.isEmpty()) {
-                usertwo = "";
+            // 중복 방 생성 방지
+            if (redisService.get(CHAT_ROOM_PREFIX + roomId) != null) {
+                throw new IllegalStateException("이미 존재하는 채팅방입니다: " + roomId);
             }
 
             String roomDate = LocalDateTime.now().format(formatter);
-            ChatRoomVO roomVO = new ChatRoomVO(UUID.randomUUID().toString(),roomname, userone, usertwo , roomDate);
+            ChatRoomVO roomVO = new ChatRoomVO(roomId, userOne, userTwo, roomDate);
 
-            log.info("새로운 채팅방 생성: ID = {}", roomVO.getRoomId());
-            redisService.set(CHAT_ROOM_PREFIX + roomVO.getRoomId(), roomVO, 3600); // Redis에 저장 (TTL 1시간)
+            log.info("새로운 채팅방 생성: ID = {}", roomId);
+            redisService.set(CHAT_ROOM_PREFIX + roomId, roomVO, 3600); // Redis에 저장 (TTL 1시간)
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("채팅방 생성 중 오류가 발생했습니다.", e);
         }
     }
 
+    // Redis의 채팅방 데이터를 DB로 동기화
     @Scheduled(fixedRate = 60000) // 1분마다 실행
     public void syncRoomsToDB() {
         Set<String> keys = redisService.keys(CHAT_ROOM_PREFIX + "*");

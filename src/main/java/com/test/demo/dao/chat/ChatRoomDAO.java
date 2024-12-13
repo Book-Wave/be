@@ -12,7 +12,6 @@ public class ChatRoomDAO {
 
     private final ChatRoomMapper chatRoomMapper;
 
-
     public ChatRoomDAO(ChatRoomMapper chatRoomMapper) {
         this.chatRoomMapper = chatRoomMapper;
     }

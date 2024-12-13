@@ -10,21 +10,17 @@
     <select id="getChatRoomById" parameterType="long" resultType="com.test.demo.vo.chat.ChatRoomVO">
         SELECT
             room_id AS roomId,
-            room_name AS roomName,
-            userone AS userone,
-            usertwo AS usertwo,
-            room_date AS roomDate
-        FROM chat_rooms
+            user_one AS userone,
+            user_two AS usertwo,
+            created_time AS roomDate
+        FROM chatroom
         WHERE room_id = #{room_id}
     </select>
 
 
     <insert id="insertOrUpdateChatRoom" parameterType="com.test.demo.vo.chat.ChatRoomVO">
-        INSERT INTO chat_rooms (room_id, room_name, room_date)
-        VALUES (#{roomId}, #{roomName}, #{roomDate})
-        ON DUPLICATE KEY UPDATE
-                             room_name = VALUES(room_name),
-                             room_date = VALUES(room_date);
+        INSERT INTO chatroom (room_id, user_one, user_two, created_time)
+        VALUES (#{roomId}, #{roomName}, #{roomDate}, #{createdTime})
     </insert>
 
 

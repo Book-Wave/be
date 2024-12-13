@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.test.demo.dao.chat.ChatRoomDAO;
+import com.test.demo.service.chat.ChatKey;
 import com.test.demo.vo.chat.ChatRoomVO;
 import com.test.demo.vo.chat.ChatVO;
 import lombok.RequiredArgsConstructor;
@@ -46,20 +47,24 @@ public class RedisService {
         redisTemplate.delete(Objects.requireNonNull(redisTemplate.keys("*")));
     }
 
+
+
+
 //  방목록 모두 불러와서 따로 출력
     public Set<String> keys(String pattern) {
         return redisTemplate.keys(pattern);
     }
 
-    // 메세지 리스트로 저장
-    public void setbyList(String key, Object value, int minutes) {
+
+    // 메시지 리스트로 저장
+    public void setMessageList(String roomId, Object value, int minutes) {
         try {
             String serializedValue = objectMapper.writeValueAsString(value);
-            redisTemplate.opsForList().rightPush(key, serializedValue);
+            redisTemplate.opsForList().rightPush(roomId, serializedValue);
 
             // TTL 설정
             if (minutes > 0) {
-                redisTemplate.expire(key, Duration.ofMinutes(minutes));
+                redisTemplate.expire(roomId, Duration.ofMinutes(minutes));
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Redis 리스트에 값을 저장하는 동안 직렬화 오류가 발생했습니다: " + e.getMessage(), e);
@@ -69,17 +74,17 @@ public class RedisService {
     }
 
     // 메시지 리스트 가져오기
-    public List<ChatVO> getbyList(String key) {
+    public List<ChatVO> getMessageList(String roomId) {
         try {
-            log.info("현재 키: {}",key);
-            List<Object> redisData = redisTemplate.opsForList().range(key, 0, -1); // 리스트 전체 가져오기
+            log.info("현재 키: {}", roomId);
+            List<Object> redisData = redisTemplate.opsForList().range(roomId, 0, -1); // 리스트 전체 가져오기
 
             if (redisData == null || redisData.isEmpty()) {
-                log.info("Redis에서 가져온 데이터가 비어 있습니다 - Key: {}", key);
+                log.info("Redis에서 가져온 데이터가 비어 있습니다 - Key: {}", roomId);
                 return Collections.emptyList(); // 빈 리스트 반환
             }
 
-            log.info("Fetched data from Redis for key '{}': {}", key, redisData);
+            log.info("Fetched data from Redis for key '{}': {}", roomId, redisData);
 
             // Redis에서 가져온 데이터를 ChatVO로 역직렬화
             return redisData.stream()

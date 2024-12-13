@@ -1,11 +1,10 @@
 package com.test.demo.service.chat;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import com.test.demo.dao.chat.ChatDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.chat.ChatVO;
-import com.test.demo.vo.chat.MessageType;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -23,37 +22,40 @@ public class ChatService {
         this.chatDAO = chatDAO;
         this.redisService = redisService;
         this.formatter = formatter;
+
     }
 
 
 
     // 메시지 저장
-    public void saveMessage(String roomId, String sender, String message, MessageType type) {
+    public void saveMessage(String roomId, String sender, String receiver, String message, boolean isread) {
         try {
             // ChatVO 객체 생성
             String roomDate = LocalDateTime.now().format(formatter);
             ChatVO chatVO = ChatVO.builder()
                     .roomId(roomId)
                     .sender(sender)
+                    .receiver(receiver)
                     .message(message)
-                    .type(type)
-                    .time(roomDate)
+                    .messagetime(roomDate)
+                    .isRead(isread)
                     .build();
 
-            // Redis에 저장 (key는 'message:{roomId}:{sender}' 형태로)
-            redisService.setbyList("message:" + roomId + ":" + sender, chatVO, 3600);
+
+            // Redis에 저장 -> roomId를 sender-recevier로 저장
+            redisService.setMessageList(roomId,chatVO, 3600);
         } catch (DataAccessException e) {
             throw new RuntimeException("메시지 저장 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
     // 특정 채팅방의 메시지 조회
-    public List<ChatVO> findMessagesByRoomId(String roomId, String sender) {
+    public List<ChatVO> findMessagesByRoomId(String roomId) {
         try {
 
             // Redis에서 메시지 조회 (message:{roomId}:* 형태로)
-            String pattern = "message:" + roomId + ":"+sender;
-            List<ChatVO> messages =  redisService.getbyList(pattern);
+            String pattern = "message:" + roomId;
+            List<ChatVO> messages =  redisService.getMessageList(pattern);
 
             if (messages == null) {
                 messages = new ArrayList<>();
@@ -68,7 +70,7 @@ public class ChatService {
             messages.addAll(dbMessages);
 
             // 메시지 정렬 (시간 기준)
-            messages.sort(Comparator.comparing(ChatVO::getTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            messages.sort(Comparator.comparing(ChatVO::getMessagetime, Comparator.nullsLast(Comparator.naturalOrder())));
 
             return messages;
 
@@ -78,14 +80,30 @@ public class ChatService {
     }
 
     // 메시지 삭제
-    public void deleteMessage(String roomId, Long messageId) {
+    public void deleteMessage(String roomId, String roomDate) {
         try {
-            // Redis에서 메시지 삭제
-            String redisKey = "message:" + roomId + ":" + messageId;
-            redisService.delete(redisKey);
+            // Redis에서 roomId로 메시지 목록을 가져옴
+            String redisKey = "message:" + roomId;
+            List<ChatVO> chatList = redisService.getMessageList(redisKey);
 
-            // DB에서 메시지 삭제
-            chatDAO.deleteMessage(messageId);
+            // roomDate에 해당하는 메시지 찾기
+            ChatVO messageToDelete = null;
+            for (ChatVO message : chatList) {
+                if (message.getMessagetime().equals(roomDate)) {
+                    messageToDelete = message;
+                    break;  // 일치하는 메시지를 찾으면 반복 종료
+                }
+            }
+
+            // 해당 메시지가 존재하면 삭제
+            if (messageToDelete != null) {
+                chatList.remove(messageToDelete);
+                // Redis에 업데이트된 목록을 저장
+                redisService.setMessageList(redisKey, chatList,3600);
+            }
+
+            // DB에서 해당 메시지 삭제
+            chatDAO.deleteMessage(roomId, roomDate);
         } catch (DataAccessException e) {
             throw new RuntimeException("메시지 삭제 중 오류가 발생했습니다: " + e.getMessage(), e);
         }

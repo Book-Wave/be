@@ -47,7 +47,7 @@ public class ChatController {
     @GetMapping(value = "/rooms")
     public ResponseEntity<List<ChatRoomVO>> room() {
         try {
-            List<ChatRoomVO> rooms = chatRoomService.findAllRoom();
+            List<ChatRoomVO> rooms = chatRoomService.findById();
             log.info(rooms.toString());
             return ResponseEntity.ok(rooms);
         } catch (Exception e) {
@@ -63,13 +63,11 @@ public class ChatController {
     @PostMapping("/rooms")
     public ResponseEntity<String> createRoom(@RequestBody Map<String, String> requestBody) {
         try {
+            String roomId = requestBody.get("roomId");
             String userone = requestBody.get("userone");
             String usertwo = requestBody.get("usertwo");
-            String roomname = requestBody.get("roomName");
-//            if (name == null || name.isEmpty()) {
-//                throw new IllegalArgumentException("name은 필수 값입니다.");
-//            }
-            chatRoomService.createRoom(roomname, userone, usertwo);
+            log.info("Room Id : {}",roomId);
+            chatRoomService.createRoom(userone, usertwo);
             return ResponseEntity.ok("sucess");
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
@@ -114,11 +112,13 @@ public class ChatController {
 //  @SendTo("/sub/{roomId}")
 //    이 서비스에서 지금 발간된 메세지를 일단 저장
 //return하거나 convertandsend 메서드를 통해 /sub/roomid에 구독된 사용자들에게 메세지 전송
+
+
     @MessageMapping("/message")
     public void handleMessage(@Payload ChatVO message) {
         try {
             log.info("message: {}", message);
-            chatService.saveMessage(message.getRoomId(), message.getSender(), message.getMessage(), message.getType());
+            chatService.saveMessage(message.getRoomId(), message.getSender(),message.getReceiver(), message.getMessage(), message.isRead());
             simpMessagingTemplate.convertAndSend("/sub/" + message.getRoomId(), message);
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생: {}", e.getMessage());
@@ -129,9 +129,8 @@ public class ChatController {
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatVO>> getMessagesByRoomId(@PathVariable String roomId, @RequestParam String sender) {
         try {
-            System.out.println("메세지 조회");
             log.info("sender = {}",sender);
-            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId, sender);
+            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId);
             log.info(messages.toString());
             return ResponseEntity.ok(messages);
         } catch (Exception e) {
@@ -141,10 +140,10 @@ public class ChatController {
     }
 
     // 메시지 삭제
-    @DeleteMapping("/rooms/{roomId}/messages/{messageId}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable String roomId, @PathVariable Long messageId) {
+    @DeleteMapping("/rooms/{roomId}/messages/{roomDate}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable String roomId, @PathVariable String roomDate) {
         try {
-            chatService.deleteMessage(roomId,messageId);
+            chatService.deleteMessage(roomId, roomDate);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("메시지 삭제 중 오류 발생: {}", e.getMessage());

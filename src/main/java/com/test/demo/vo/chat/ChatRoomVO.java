@@ -13,10 +13,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ChatRoomVO {
     private String roomId;
-    private String roomname;
     private String userone;
     private String usertwo;
     private String roomDate;
-
 
 }
