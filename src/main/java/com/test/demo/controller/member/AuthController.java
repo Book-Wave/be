@@ -1,12 +1,19 @@
 package com.test.demo.controller.member;
 
+import com.test.demo.config.jwt.JwtTokenProvider;
 import com.test.demo.service.member.KakaoOAuthService;
 import com.test.demo.service.member.MailService;
 import com.test.demo.service.member.MemberService;
 import com.test.demo.service.member.NaverOAuthService;
 import com.test.demo.vo.MemberVO;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,10 +25,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final MemberService memberService;
     private final MailService mailService;
     private final KakaoOAuthService kakaoOAuthService;
     private final NaverOAuthService naverOAuthService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("{provider}/login")
     public ResponseEntity<String> login_oauth(@PathVariable("provider") String provider) {
@@ -35,12 +44,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> login_request) {
+    public ResponseEntity<String> login(@RequestBody Map<String, String> login_request, HttpServletResponse res) {
         try {
-            Map<String, String> response = memberService.login(login_request);
-            return ResponseEntity.ok(response);
+            String access_token = memberService.login(login_request, res);
+            return ResponseEntity.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + access_token).body("success");
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage())); // 인증 자격 증명 실패
+            return ResponseEntity.status(401).body("fail: " + e.getMessage());
         }
     }
 
@@ -99,9 +108,10 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh_token(@RequestHeader ("Authorization") String authorization) {
+    public ResponseEntity<?> refresh_token(HttpServletRequest req, HttpServletResponse res) {
+        String refresh_token = jwtTokenProvider.getRefreshTokenFromCookie(req);
         try {
-            String new_access_token = memberService.refresh_access_token(authorization);
+            String new_access_token = memberService.refresh_access_token(refresh_token, res);
             return ResponseEntity.ok(Map.of("token", new_access_token));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(e.getMessage());

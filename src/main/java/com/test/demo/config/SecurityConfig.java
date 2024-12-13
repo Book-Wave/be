@@ -74,8 +74,10 @@ public class SecurityConfig {
         configuration.addAllowedOriginPattern("ws://52.78.186.21");;
 //        configuration.addAllowedOriginPattern("http://localhost");
 //        configuration.addAllowedOriginPattern("ws://localhost");
+        configuration.addAllowedOriginPattern("http://localhost:3000"); // React 앱의 URL
         configuration.addAllowedMethod("*");  // 모든 HTTP 메서드 허용
         configuration.addAllowedHeader("*");  // 모든 헤더 허용
+        configuration.addExposedHeader("Authorization");
         configuration.setAllowCredentials(true);  // 쿠키 및 인증 정보 포함 허용
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

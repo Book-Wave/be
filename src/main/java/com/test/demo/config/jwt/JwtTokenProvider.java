@@ -6,6 +6,8 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -13,14 +15,16 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
     @Value("${spring.jwt.secret}") String jwtSecret;
-    private final long accessTokenExpirationInMs = 24 * 60 * 60 * 1000L;;  // 토큰 유효기간 1일
+    private final long accessTokenExpirationInMs = 30 * 1000L;;  // 토큰 유효기간 1일
     private final long refreshTokenExpirationInMs = 30 * 24 * 60 * 60 * 1000L; // 리프레시 토큰 유효기간 30일
 
-    public String create_token(String email, Long member_id) {
+    public String create_token(String email, Long member_id, String nickname) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("member_id", member_id)
+                .claim("nickname", nickname)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpirationInMs))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
@@ -42,12 +46,12 @@ public class JwtTokenProvider {
             return true;
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             // 토큰 만료
-            System.out.println("토큰 만료: " + e.getMessage());
+            log.info("token expired" + e.getMessage());
             throw e;
         } catch (Exception e) {
             // 잘못된 토큰
-            System.out.println("토큰 검증 실패: " + e.getMessage());
-            throw new IllegalArgumentException("Invalid token");
+            log.info("token error" + e.getMessage());
+            throw e;
         }
     }
 
@@ -63,6 +67,11 @@ public class JwtTokenProvider {
     public String getEmailFromToken(String token) {
         Claims claims = parseClaims(token);
         return claims.getSubject();
+    }
+
+    public String getNicknameFromToken(String token) {
+        Claims claims = parseClaims(token);
+        return claims.get("nickname", String.class);
     }
 
     public String resolveToken(HttpServletRequest request) {
@@ -89,11 +98,21 @@ public class JwtTokenProvider {
     public void setRefreshTokenInCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie("refresh_token", refreshToken);
         cookie.setHttpOnly(true); // 자바스크립트에서 접근 불가
-        cookie.setSecure(true);   // HTTPS 연결에서만 쿠키가 전송됨
+        cookie.setSecure(false);   // HTTPS 연결에서만 쿠키가 전송됨
         cookie.setPath("/");      // 쿠키가 모든 경로에서 사용될 수 있도록 설정
         cookie.setMaxAge(60 * 60 * 24 * 30); // 30일 동안 유효
         response.addCookie(cookie);
     }
+
+    public void deleteRefreshTokenInCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refresh_token", null); // 값 제거
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // HTTPS 환경이면 true로 설정
+        cookie.setPath("/");    // 동일한 경로로 설정
+        cookie.setMaxAge(0);    // 만료 시간 0으로 설정
+        response.addCookie(cookie);
+    }
+
 
     public Claims parseClaims(String token) {
         return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
