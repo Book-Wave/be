@@ -45,10 +45,11 @@ public class SecurityConfig {
         // JWT 인증 필터 추가
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         // OAuth 2.0 로그인 설정
-        http.oauth2Login(oauth2 -> oauth2
-                .defaultSuccessUrl("/api/member/me") // 로그인 성공 후 리다이렉트 URL 설정
-                .failureUrl("/login?error=true") // 로그인 실패 시 리다이렉트 URL 설정
-        );
+//        http.oauth2Login(
+//                oauth2 -> oauth2
+//                .defaultSuccessUrl("/api/member/me") // 로그인 성공 후 리다이렉트 URL 설정
+//                .failureUrl("/login?error=true") // 로그인 실패 시 리다이렉트 URL 설정
+//        );
 
         return http.build();  // http.build()로 반환
     }
@@ -71,6 +72,7 @@ public class SecurityConfig {
         configuration.addAllowedOriginPattern("http://localhost:3000"); // React 앱의 URL
         configuration.addAllowedMethod("*");  // 모든 HTTP 메서드 허용
         configuration.addAllowedHeader("*");  // 모든 헤더 허용
+        configuration.addExposedHeader("Authorization");
         configuration.setAllowCredentials(true);  // 쿠키 및 인증 정보 포함 허용
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

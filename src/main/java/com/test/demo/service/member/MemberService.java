@@ -6,6 +6,7 @@ import com.test.demo.dao.member.MemberDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.MemberVO;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -52,7 +53,7 @@ public class MemberService {
         }
         MemberVO memberVO = new MemberVO(oauth_provider, oauth_id, name, email, nick_name, birth_date, gender);
         save(memberVO);
-        String token = jwtTokenProvider.create_token(memberVO.getEmail(), memberVO.getMember_id());
+        String token = jwtTokenProvider.create_token(memberVO.getEmail(), memberVO.getMember_id(), memberVO.getNick_name());
         String refresh_token = jwtTokenProvider.create_refresh_token(memberVO.getEmail());
 
         redisService.set("RT:" + memberVO.getEmail(), refresh_token, 30 * 24 * 60);
@@ -80,7 +81,7 @@ public class MemberService {
             if (memberVO != null) {
                 MemberVO existing = check_member(memberVO, oauth_provider);
                 if (existing != null) {
-                    String token = jwtTokenProvider.create_token(existing.getEmail(), existing.getMember_id());
+                    String token = jwtTokenProvider.create_token(existing.getEmail(), existing.getMember_id(), existing.getNick_name());
                     String refresh_token = jwtTokenProvider.create_refresh_token(existing.getEmail());
                     redisService.set("RT:" + existing.getEmail(), refresh_token, 30 * 24 * 60);
                     Map<String, Object> response = new HashMap<>();
@@ -130,10 +131,9 @@ public class MemberService {
         return memberDAO.find_by_email(email);
     }
 
-    public Map<String, String> login(Map<String, String> loginRequest) {
+    public String login(Map<String, String> loginRequest, HttpServletResponse res) {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
-        Map<String, String> map = new HashMap<>();
 
         MemberVO memberVO = memberDAO.find_by_email(email);
         if (memberVO == null) {
@@ -143,16 +143,14 @@ public class MemberService {
             throw new IllegalArgumentException("Invalid password.");
         }
 
-        String access_token = jwtTokenProvider.create_token(email, memberVO.getMember_id());
+        String access_token = jwtTokenProvider.create_token(email, memberVO.getMember_id(), memberVO.getNick_name());
         String refresh_token = jwtTokenProvider.create_refresh_token(email);
         redisService.set("RT:" + email, refresh_token, 30 * 24 * 60);
-        map.put("access_token", access_token);
-        map.put("refresh_token", refresh_token);
-        return map;
+        jwtTokenProvider.setRefreshTokenInCookie(res, refresh_token);
+        return access_token;
     }
 
-    public String refresh_access_token(String authorization) {
-        String refresh_token = authorization.substring(7);
+    public String refresh_access_token(String refresh_token, HttpServletResponse res) {
         if (!jwtTokenProvider.validate_refresh_token(refresh_token)) {
             throw new IllegalArgumentException("Invalid refresh token.");
         }
@@ -167,7 +165,10 @@ public class MemberService {
         if (memberVO == null) {
             throw new IllegalArgumentException("Member does not exist.");
         }
-        return jwtTokenProvider.create_token(email, memberVO.getMember_id());
+        String new_access_token = jwtTokenProvider.create_token(email, memberVO.getMember_id(), memberVO.getNick_name());
+        jwtTokenProvider.deleteRefreshTokenInCookie(res);
+        redisService.delete("RT:" + email);
+        return new_access_token;
     }
 
     public boolean check_nickname(String nick_name) {
