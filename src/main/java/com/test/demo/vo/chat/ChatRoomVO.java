@@ -16,5 +16,4 @@ public class ChatRoomVO {
     private String userone;
     private String usertwo;
     private String roomDate;
-
 }

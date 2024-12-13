@@ -17,7 +17,7 @@ import java.util.Date;
 public class JwtTokenProvider {
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
     @Value("${spring.jwt.secret}") String jwtSecret;
-    private final long accessTokenExpirationInMs = 30 * 1000L;;  // 토큰 유효기간 1일
+    private final long accessTokenExpirationInMs = 60 * 60 * 1000L;;  // 토큰 유효기간 1시간
     private final long refreshTokenExpirationInMs = 30 * 24 * 60 * 60 * 1000L; // 리프레시 토큰 유효기간 30일
 
     public String create_token(String email, Long member_id, String nickname) {

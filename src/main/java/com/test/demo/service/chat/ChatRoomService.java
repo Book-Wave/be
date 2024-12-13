@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.test.demo.dao.chat.ChatRoomDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.chat.ChatRoomVO;
+import com.test.demo.vo.chat.ChatVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,19 +27,24 @@ public class ChatRoomService {
 
 
     // 채팅방 목록 불러오기
-    public List<ChatRoomVO> findAllRoom() {
+    public List<ChatRoomVO> findAllRoomById(String sender) {
         try {
             List<ChatRoomVO> result = new ArrayList<>();
-            Set<String> keys = redisService.keys(CHAT_ROOM_PREFIX + "*");
-            for (String key : keys) {
-                // Redis에서 가져온 데이터를 Map으로 읽고 ChatRoomVO로 변환
-                Object redisData = redisService.get(key);
-                if (redisData != null) {
+            Set<String> roomkeys = redisService.keys(CHAT_ROOM_PREFIX + "*");
+
+            for(String roomkey : roomkeys) {
+                String users = roomkey.split(":")[1];
+                String user_one = users.split("-")[0];
+                String user_two = users.split("-")[1];
+                if(user_one.equals(sender) || user_two.equals(sender)) {
+                    Object redisData = redisService.get(roomkey);
                     ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
                     result.add(roomVO);
                 }
             }
-            Collections.reverse(result); // 최근 생성 순으로 정렬
+//          result 정렬 -> 최근 메세지가 있는 순서대로
+            result.sort(Comparator.comparing(ChatRoomVO::getRoomDate).reversed());
+
             return result;
         } catch (Exception e) {
             log.error("채팅방 목록 조회 중 오류 발생: {}", e.getMessage());
@@ -47,10 +53,10 @@ public class ChatRoomService {
     }
 
     // 특정 채팅방 조회
+    // 특정 방에 접속인데 필요 ?
     public ChatRoomVO findById(String roomId) {
         try {
-            Object redisData = redisService.get(CHAT_ROOM_PREFIX + roomId);
-
+            Object redisData = redisService.get(roomId);
             if (redisData == null) {
                 throw new NoSuchElementException("채팅방을 찾을 수 없습니다: " + roomId);
             }

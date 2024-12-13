@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,7 +49,9 @@ public class ChatController {
     @GetMapping(value = "/rooms")
     public ResponseEntity<List<ChatRoomVO>> room() {
         try {
-            List<ChatRoomVO> rooms = chatRoomService.findAllRoom();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userone = (String) authentication.getDetails();
+            List<ChatRoomVO> rooms = chatRoomService.findAllRoomById(userone);
             log.info(rooms.toString());
             return ResponseEntity.ok(rooms);
         } catch (Exception e) {
