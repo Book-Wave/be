@@ -47,7 +47,7 @@ public class ChatController {
     @GetMapping(value = "/rooms")
     public ResponseEntity<List<ChatRoomVO>> room() {
         try {
-            List<ChatRoomVO> rooms = chatRoomService.findById();
+            List<ChatRoomVO> rooms = chatRoomService.findAllRoom();
             log.info(rooms.toString());
             return ResponseEntity.ok(rooms);
         } catch (Exception e) {
