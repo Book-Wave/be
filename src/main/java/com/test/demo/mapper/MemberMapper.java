@@ -16,4 +16,6 @@ public interface MemberMapper {
     void register(MemberVO memberVO);
 
     int check_nickname(String nick_name);
+
+    int update_password(@Param("member_id") Long member_id, @Param("encoded_password") String encoded_password);
 }

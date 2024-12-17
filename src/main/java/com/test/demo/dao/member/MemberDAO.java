@@ -25,4 +25,8 @@ public class MemberDAO {
     public void register(MemberVO memberVO) { memberMapper.register(memberVO); }
 
     public boolean check_nickname(String nick_name) { return memberMapper.check_nickname(nick_name) == 0; }
+
+    public int update_password(Long member_id, String encoded_password) {
+        return memberMapper.update_password(member_id, encoded_password);
+    }
 }

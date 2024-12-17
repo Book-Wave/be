@@ -5,12 +5,9 @@ import com.test.demo.config.jwt.JwtTokenProvider;
 import com.test.demo.dao.member.MemberDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.MemberVO;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +66,7 @@ public class MemberService {
         return response;
     }
 
-    public Map<String, Object> login_callback(String oauth_provider, String code, String state, HttpSession session) {
+    public String login_callback(String oauth_provider, String code, String state, HttpSession session, HttpServletResponse res) {
         try {
             MemberVO memberVO = null;
             if ("kakao".equals(oauth_provider)) {
@@ -84,16 +81,14 @@ public class MemberService {
                     String token = jwtTokenProvider.create_token(existing.getEmail(), existing.getMember_id(), existing.getNick_name());
                     String refresh_token = jwtTokenProvider.create_refresh_token(existing.getEmail());
                     redisService.set("RT:" + existing.getEmail(), refresh_token, 30 * 24 * 60);
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("access_token", token);
-                    response.put("refresh_token", refresh_token);
-                    return response;
+                    jwtTokenProvider.setRefreshTokenInCookie(res, refresh_token);
+                    return token;
                 } else {
                     session.setAttribute("oauth_provider", memberVO.getOauth_provider());
                     session.setAttribute("oauth_id", memberVO.getOauth_id());
                     session.setAttribute("name", memberVO.getName());
                     session.setAttribute("email", memberVO.getEmail());
-                    return Map.of("new_user", true);
+                    return "new_user";
                 }
             } else {
                 throw new Exception("Failed to retrieve user info.");
@@ -110,10 +105,10 @@ public class MemberService {
 
     public void register(MemberVO memberVO) {
         if (memberDAO.find_by_email(memberVO.getEmail()) != null) {
-            throw new IllegalArgumentException("Email already exist.");
+            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
         if (!isValidPassword(memberVO.getPassword())) {
-            throw new IllegalArgumentException("Invalid password.");
+            throw new IllegalArgumentException("올바르지 않은 비밀번호입니다.");
         }
 
         String encoded_password = passwordEncoder.encode(memberVO.getPassword());
@@ -125,10 +120,6 @@ public class MemberService {
         Pattern pattern = Pattern.compile(pw_pattern);
         Matcher matcher = pattern.matcher(password);
         return matcher.matches();
-    }
-
-    public MemberVO get_by_email(String email) {
-        return memberDAO.find_by_email(email);
     }
 
     public String login(Map<String, String> loginRequest, HttpServletResponse res) {
@@ -173,5 +164,27 @@ public class MemberService {
 
     public boolean check_nickname(String nick_name) {
         return memberDAO.check_nickname(nick_name);
+    }
+
+    public void reset_password(Map<String, Object> requestData) {
+        String email = (String) requestData.get("email");
+        String password = (String) requestData.get("password");
+        String confirm_password = (String) requestData.get("confirm_password");
+
+        if (!password.equals(confirm_password)) {
+            throw new IllegalArgumentException("비밀번호와 비밀번호 재확인이 일치하지 않습니다.");
+        }
+        if (!isValidPassword(password)) {
+            throw new IllegalArgumentException("올바르지 않은 비밀번호입니다.");
+        }
+        MemberVO memberVO = memberDAO.find_by_email(email);
+        if (memberVO == null || memberVO.getPassword() == null) {
+            throw new IllegalArgumentException("가입되지 않은 이메일입니다.");
+        }
+        String encoded_password = passwordEncoder.encode(password);
+        int row_update = memberDAO.update_password(memberVO.getMember_id(), encoded_password);
+        if (row_update != 1) {
+            throw new RuntimeException("비밀번호 재설정에 실패했습니다.");
+        }
     }
 }
