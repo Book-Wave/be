@@ -25,7 +25,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final MemberService memberService;
     private final MailService mailService;
     private final KakaoOAuthService kakaoOAuthService;
@@ -57,10 +56,14 @@ public class AuthController {
     public ResponseEntity<?> oauth_callback(@PathVariable("provider") String provider,
                                             @RequestParam("code") String code,
                                             @RequestParam(name = "state", required = false) String state,
-                                            HttpSession session) {
+                                            HttpSession session, HttpServletResponse res) {
         try {
-            Map<String, Object> response = memberService.login_callback(provider, code, state, session);
-            return ResponseEntity.ok().body(response);
+            String response = memberService.login_callback(provider, code, state, session, res);
+            if (response.equals("new_user")) {
+                return ResponseEntity.ok().body("new");
+            } else {
+                return ResponseEntity.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + response).body("existing");
+            }
         } catch (RuntimeException e) {
             return ResponseEntity.status(500).body(provider + " login failed."); // 서버 오류
         }
@@ -124,5 +127,17 @@ public class AuthController {
     public ResponseEntity<Boolean> check_nickname(@PathVariable("nickname") String nick_name) {
         boolean is_duplicated = memberService.check_nickname(nick_name);
         return ResponseEntity.ok(is_duplicated);
+    }
+
+    @PutMapping("/reset")
+    public ResponseEntity<String> reset_password(@RequestBody Map<String, Object> request_data) {
+        try {
+            memberService.reset_password(request_data);
+            return ResponseEntity.ok("success");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500).body(e.getMessage());
+        }
     }
 }

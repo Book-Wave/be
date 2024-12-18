@@ -18,7 +18,7 @@ public class MailService {
     private final Map<String, Integer> verification_code = new HashMap<>();
 
     public static int create_code() {
-        return (int) (Math.random() * (90000)) + 100000;
+        return (int) (Math.random() * (900000)) + 100000;
     }
 
     public MimeMessage create_email(String email) {
