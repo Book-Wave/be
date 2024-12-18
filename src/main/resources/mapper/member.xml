@@ -13,6 +13,11 @@
         INSERT INTO `member`(email, `password`, `name`, nick_name, birth_date, gender)
         VALUES (#{email}, #{password}, #{name}, #{nick_name}, #{birth_date}, #{gender})
     </insert>
+    <update id="update_password" parameterType="map">
+        UPDATE `member`
+        SET password = #{encoded_password}
+        WHERE member_id = #{member_id}
+    </update>
 
     <select id="find_by_id_provider" resultType="com.test.demo.vo.MemberVO">
         SELECT *
