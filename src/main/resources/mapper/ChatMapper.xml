@@ -37,9 +37,22 @@
     <!-- 메세지 읽음 상태 변경   -->
     <update id="updateMessageReadStatus" parameterType="map">
         UPDATE chat
-        SET is_read = #{isRead}
-        WHERE message_id = #{messageId} AND receiver = #{recevier}
+        SET is_read = 1
+        WHERE message_id IN
+        <foreach item="id" collection="messageIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND receiver = #{receiver}
     </update>
+
+    <insert id="insertBulkMessages" parameterType="java.util.List">
+        INSERT INTO chat (room_id, sender, receiver, message, time, is_read)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roomId}, #{item.sender}, #{item.receiver}, #{item.message}, #{item.messagetime}, #{item.isRead})
+        </foreach>
+    </insert>
+
 
 
 </mapper>

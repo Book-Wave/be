@@ -1,11 +1,17 @@
 package com.test.demo.config;
 
+import com.test.demo.config.jwt.JwtHandshakeInterceptor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.web.socket.config.annotation.*;
 
 @Configuration
 //stomp 사용을 위한 어노테이션
@@ -13,16 +19,22 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 //websocket위에서 작동하는 프로토콜, 클라이언트와 서버가 전송할 메세지들을 정의한다.
 @EnableWebSocketMessageBroker
 @EnableWebSocket
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
+
+    public WebSocketConfig(JwtHandshakeInterceptor jwtHandshakeInterceptor) {
+        this.jwtHandshakeInterceptor = jwtHandshakeInterceptor;
+    }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 엔드포인트 설정, 클라이언트에서 접근할 수 있는 URL 설정
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*");// 허용할 도메인 목록
+                .addInterceptors(jwtHandshakeInterceptor)
+                .setAllowedOriginPatterns("*");
 
-//                .withSockJS();  // SockJS 폴백 메커니즘 활성화
+
     }
 
 
@@ -36,6 +48,27 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.enableSimpleBroker( "/sub");
         registry.setApplicationDestinationPrefixes("/pub");
 
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(8192)  // 메시지 크기 제한
+                .setSendBufferSizeLimit(8192)  // 버퍼 크기 제한
+                .setSendTimeLimit(10000);  // 전송 시간 제한
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new ChannelInterceptor() {
+            @Override
+            public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+                    log.info("STOMP Connection attempt: {}", accessor.getSessionId());
+                }
+                return message;
+            }
+        });
     }
 
 }

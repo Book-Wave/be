@@ -1,22 +1,18 @@
 package com.test.demo.service;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.test.demo.dao.chat.ChatRoomDAO;
-import com.test.demo.service.chat.ChatKey;
-import com.test.demo.vo.chat.ChatRoomVO;
+import com.test.demo.dao.chat.ChatDAO;
 import com.test.demo.vo.chat.ChatVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -25,6 +21,11 @@ public class RedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final RedisTemplate<String, ChatVO> chatRedisTemplate;
+    private final ChatDAO chatDAO;
+    private static final int MAX_MESSAGES_COUNT = 100;
+    private static final Duration SAVE_TiME = Duration.ofMinutes(10);
+    private final Map<String, LocalDateTime> lastSaveTimes = new HashMap<>();
 
 
     public void set(String key, Object value, int minutes) {
@@ -32,7 +33,12 @@ public class RedisService {
     }
 
     public Object get(String key) {
-        return redisTemplate.opsForValue().get(key);
+        try {
+            return redisTemplate.opsForValue().get(key);
+        } catch (Exception e) {
+            log.error("Redis 데이터 읽기 중 오류 발생. Key: {}, Error: {}", key, e.getMessage());
+            throw new RuntimeException("Redis 데이터 읽기 중 오류 발생: " + e.getMessage(), e);
+        }
     }
 
     public void delete(String key) {
@@ -48,58 +54,92 @@ public class RedisService {
     }
 
 
-
-
-//  방목록 모두 불러와서 따로 출력
+    //  방목록 모두 불러와서 따로 출력
     public Set<String> keys(String pattern) {
         return redisTemplate.keys(pattern);
     }
 
 
-    // 메시지 리스트로 저장
-    public void setMessageList(String roomId, Object value, int minutes) {
+    public void setMessageList(String roomId, List<ChatVO> messages, int minutes) {
         try {
-            String serializedValue = objectMapper.writeValueAsString(value);
-            redisTemplate.opsForList().rightPush(roomId, serializedValue);
+            List<ChatVO> existingMessages = getMessageList(roomId);
+            existingMessages.addAll(messages);
 
-            // TTL 설정
-            if (minutes > 0) {
-                redisTemplate.expire(roomId, Duration.ofMinutes(minutes));
+            LocalDateTime now = LocalDateTime.now();
+            boolean shouldSave = existingMessages.size() > MAX_MESSAGES_COUNT ||
+                    !lastSaveTimes.containsKey(roomId) ||
+                    Duration.between(lastSaveTimes.getOrDefault(roomId, now.minusDays(1)), now).compareTo(SAVE_TiME) > 0;
+
+            if (shouldSave) {
+                if (existingMessages.size() > MAX_MESSAGES_COUNT) {
+                    List<ChatVO> messagesToStore = existingMessages.subList(0, existingMessages.size() - MAX_MESSAGES_COUNT);
+                    chatDAO.insertBulkMessages(messagesToStore);
+                    existingMessages = new ArrayList<>(existingMessages.subList(existingMessages.size() - MAX_MESSAGES_COUNT, existingMessages.size()));
+                } else {
+                    chatDAO.insertBulkMessages(existingMessages);
+                }
+                lastSaveTimes.put(roomId, now);
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Redis 리스트에 값을 저장하는 동안 직렬화 오류가 발생했습니다: " + e.getMessage(), e);
+
+            chatRedisTemplate.delete(roomId);
+            for (ChatVO message : existingMessages) {
+                chatRedisTemplate.opsForList().rightPush(roomId, message);
+            }
+
+            chatRedisTemplate.expire(roomId, Duration.ofMinutes(minutes));
+            log.info("Redis에 메시지 리스트 저장 완료. Room ID: {}, 메시지 수: {}", roomId, existingMessages.size());
         } catch (Exception e) {
+            log.error("Redis 리스트에 값을 저장하는 중 오류 발생: ", e);
             throw new RuntimeException("Redis 리스트에 값을 저장하는 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
-    // 메시지 리스트 가져오기
+    // Redis에서 메시지 리스트 가져오기
     public List<ChatVO> getMessageList(String roomId) {
         try {
-            log.info("현재 키: {}", roomId);
-            List<Object> redisData = redisTemplate.opsForList().range(roomId, 0, -1); // 리스트 전체 가져오기
-
+            List<ChatVO> redisData = chatRedisTemplate.opsForList().range(roomId, 0, -1);
             if (redisData == null || redisData.isEmpty()) {
-                log.info("Redis에서 가져온 데이터가 비어 있습니다 - Key: {}", roomId);
-                return Collections.emptyList(); // 빈 리스트 반환
+                redisData = chatDAO.selectMessagesByRoomId(roomId);
+                if (!redisData.isEmpty()) {
+                    setMessageList(roomId, redisData, 60); // 1시간 동안 캐시
+                }
             }
-
-            log.info("Fetched data from Redis for key '{}': {}", roomId, redisData);
-
-            // Redis에서 가져온 데이터를 ChatVO로 역직렬화
-            return redisData.stream()
-                    .map(data -> {
-                        try {
-                            // 직렬화된 JSON 문자열을 ChatVO 객체로 역직렬화
-                            return objectMapper.readValue((String) data, ChatVO.class); // 직접 캐스팅하여 객체로 변환
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException("Redis 리스트 데이터 변환 중 오류가 발생했습니다: " + e.getMessage(), e);
-                        }
-                    })
-                    .collect(Collectors.toList());
+            return redisData;
         } catch (Exception e) {
-            throw new RuntimeException("Redis 리스트 데이터를 가져오는 중 오류가 발생했습니다: " + e.getMessage(), e);
+            throw new RuntimeException("메시지 리스트를 가져오는 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
 
+
+    public void updateMessageReadStatusInRedis(String roomId, List<Integer> messageIds) {
+        try {
+            // Redis에서 메시지 리스트 가져오기
+            List<ChatVO> messages = getMessageList(roomId);
+
+            // 읽음 상태 업데이트
+            boolean updated = false;
+            for (ChatVO message : messages) {
+                if (messageIds.contains(message.getMessageId())) {
+                    message.setRead(true); // 읽음 처리
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                // 기존 리스트 삭제 후 업데이트된 리스트 저장
+                chatRedisTemplate.delete(roomId);
+                for (ChatVO updatedMessage : messages) {
+                    chatRedisTemplate.opsForList().rightPush(roomId, updatedMessage);
+                }
+
+                log.info("Redis에 읽음 상태가 업데이트되었습니다. Room ID: {}, Message IDs: {}", roomId, messageIds);
+            } else {
+                log.info("업데이트할 메시지가 없습니다. Room ID: {}, Message IDs: {}", roomId, messageIds);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Redis 메시지 읽음 상태 업데이트 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
 }
+
+

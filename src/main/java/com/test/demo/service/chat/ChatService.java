@@ -2,16 +2,23 @@ package com.test.demo.service.chat;
 
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.test.demo.dao.chat.ChatDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.chat.ChatVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
+@Slf4j
 public class ChatService {
 
     private final ChatDAO chatDAO;
@@ -28,7 +35,7 @@ public class ChatService {
 
 
     // 메시지 저장
-    public void saveMessage(String roomId, String sender, String receiver, String message, boolean isread) {
+    public void saveMessage(String roomId, String sender, String receiver, String message, boolean isRead) {
         try {
             // ChatVO 객체 생성
             String roomDate = LocalDateTime.now().format(formatter);
@@ -38,12 +45,15 @@ public class ChatService {
                     .receiver(receiver)
                     .message(message)
                     .messagetime(roomDate)
-                    .isRead(isread)
+                    .isRead(isRead)
                     .build();
 
+            // 단일 객체를 리스트로 감싸서 Redis에 저장
+            List<ChatVO> messageList = new ArrayList<>();
+            messageList.add(chatVO);
 
-            // Redis에 저장 -> roomId를 sender-recevier로 저장
-            redisService.setMessageList(roomId,chatVO, 3600);
+            // Redis에 저장
+            redisService.setMessageList(roomId, messageList, 60);
         } catch (DataAccessException e) {
             throw new RuntimeException("메시지 저장 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
@@ -53,6 +63,7 @@ public class ChatService {
     public List<ChatVO> findMessagesByRoomId(String roomId) {
         try {
 
+            roomId = URLDecoder.decode(roomId, "UTF-8");
             // Redis에서 메시지 조회 (message:{roomId}:* 형태로)
             String pattern = "message:" + roomId;
             List<ChatVO> messages =  redisService.getMessageList(pattern);
@@ -76,12 +87,15 @@ public class ChatService {
 
         } catch (DataAccessException e) {
             throw new RuntimeException("메시지 조회 중 오류가 발생했습니다: " + e.getMessage(), e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
     // 메시지 삭제
     public void deleteMessage(String roomId, String roomDate) {
         try {
+            roomId = URLDecoder.decode(roomId, "UTF-8");
             // Redis에서 roomId로 메시지 목록을 가져옴
             String redisKey = "message:" + roomId;
             List<ChatVO> chatList = redisService.getMessageList(redisKey);
@@ -99,13 +113,34 @@ public class ChatService {
             if (messageToDelete != null) {
                 chatList.remove(messageToDelete);
                 // Redis에 업데이트된 목록을 저장
-                redisService.setMessageList(redisKey, chatList,3600);
+                redisService.setMessageList(redisKey, chatList,60);
             }
 
             // DB에서 해당 메시지 삭제
             chatDAO.deleteMessage(roomId, roomDate);
         } catch (DataAccessException e) {
             throw new RuntimeException("메시지 삭제 중 오류가 발생했습니다: " + e.getMessage(), e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
+
+    public void markMessagesAsRead(String roomId, List<Integer> messageIds, String receiver) {
+        try {
+            // 1. Redis 업데이트
+            redisService.updateMessageReadStatusInRedis(roomId, messageIds);
+
+            // 2. DB 업데이트
+            Map<String, Object> params = new HashMap<>();
+            params.put("messageIds", messageIds);
+            params.put("receiver", receiver);
+            chatDAO.updateMessageReadStatus(params);
+
+            log.info("메시지 읽음 상태가 업데이트되었습니다. Room ID: {}, Message IDs: {}", roomId, messageIds);
+        } catch (Exception e) {
+            throw new RuntimeException("메시지 읽음 상태 업데이트 중 오류가 발생했습니다: " + e.getMessage(), e);
+        }
+    }
+
+
 }

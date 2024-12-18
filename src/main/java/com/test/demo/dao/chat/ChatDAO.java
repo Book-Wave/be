@@ -2,6 +2,7 @@ package com.test.demo.dao.chat;
 
 import com.test.demo.mapper.chat.ChatMapper;
 import com.test.demo.vo.chat.ChatVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Repository
 public class ChatDAO {
 
@@ -59,6 +61,13 @@ public class ChatDAO {
         }
     }
 
+    public void insertBulkMessages(List<ChatVO> messages) {
+        if (chatMapper != null && !messages.isEmpty()) {
+            chatMapper.insertBulkMessages(messages);
+        } else {
+            log.warn("chatMapper is null or messages list is empty, skipping bulk insert");
+        }
+    }
 
 
 

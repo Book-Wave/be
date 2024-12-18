@@ -24,5 +24,7 @@ public interface ChatMapper {
     // 메시지 읽음 상태 업데이트
     void updateMessageReadStatus(Map<String, Object> params);
 
+    void insertBulkMessages(List<ChatVO> messages);
+
 
 }
