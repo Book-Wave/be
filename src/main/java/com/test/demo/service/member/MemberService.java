@@ -5,6 +5,7 @@ import com.test.demo.config.jwt.JwtTokenProvider;
 import com.test.demo.dao.member.MemberDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.MemberVO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,9 @@ public class MemberService {
                     String token = jwtTokenProvider.create_token(existing.getEmail(), existing.getMember_id(), existing.getNick_name());
                     String refresh_token = jwtTokenProvider.create_refresh_token(existing.getEmail());
                     redisService.set("RT:" + existing.getEmail(), refresh_token, 30 * 24 * 60);
+                    if (oauth_provider.equals("kakao")) {
+                        redisService.set("kakao:" + existing.getEmail(), "kakao", 30 * 24 * 60);
+                    }
                     jwtTokenProvider.setRefreshTokenInCookie(res, refresh_token);
                     return token;
                 } else {
@@ -185,6 +189,26 @@ public class MemberService {
         int row_update = memberDAO.update_password(memberVO.getMember_id(), encoded_password);
         if (row_update != 1) {
             throw new RuntimeException("비밀번호 재설정에 실패했습니다.");
+        }
+    }
+
+    public String logout(HttpServletRequest req, HttpServletResponse res) {
+        try {
+            String access_token = jwtTokenProvider.resolveToken(req);
+            if (!jwtTokenProvider.validate_token(access_token)) {
+                throw new IllegalArgumentException("Invalid or expired token.");
+            }
+            String email = jwtTokenProvider.getEmailFromToken(access_token);
+            redisService.delete("RT:" + email);
+            jwtTokenProvider.deleteRefreshTokenInCookie(res);
+            if (redisService.exists("kakao:" + email)) {
+                return kakaoOAuthService.kakao_logout();
+            }
+            return "success";
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Failed to process logout: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error during logout.", e);
         }
     }
 }

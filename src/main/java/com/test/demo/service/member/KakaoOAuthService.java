@@ -26,7 +26,7 @@ public class KakaoOAuthService {
     @Value("${spring.security.oauth2.client.registration.kakao.authorization-grant-type}") String kakao_authorization_grant_type;
     @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}") String kakao_redirect_uri;
     @Value("${spring.security.oauth2.client.provider.kakao.authorization-uri}") String kakao_authorization_uri;
-
+    private String kakao_logout_uri = "http://localhost:3000/";
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -94,5 +94,9 @@ public class KakaoOAuthService {
             log.error("Error requesting user info from Kakao", e);
             throw new RuntimeException("Error requesting user info", e);
         }
+    }
+
+    public String kakao_logout() {
+        return "https://kauth.kakao.com/oauth/logout?client_id=" + kakao_client_id + "&logout_redirect_uri=" + kakao_logout_uri;
     }
 }

@@ -23,7 +23,6 @@ public class MemberController {
 
     @GetMapping("/me")
     public ResponseEntity<Map<String, String>> getMemberInfo() {
-        log.info("Member me에 진입");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // 인증된 사용자의 이메일로 사용자 정보 조회
         String email = authentication.getName();

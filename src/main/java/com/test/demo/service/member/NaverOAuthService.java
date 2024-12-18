@@ -106,5 +106,4 @@ public class NaverOAuthService {
     private String generate_state() {
         return Long.toHexString(System.currentTimeMillis());  // 현재 시간으로 랜덤 상태값 생성
     }
-
 }
