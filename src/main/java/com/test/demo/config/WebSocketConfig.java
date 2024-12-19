@@ -1,7 +1,8 @@
 package com.test.demo.config;
 
-import com.test.demo.config.jwt.JwtHandshakeInterceptor;
+import com.test.demo.config.jwt.StompInterceptor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -12,6 +13,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.web.socket.config.annotation.*;
+import org.springframework.web.socket.server.HandshakeInterceptor;
 
 @Configuration
 //stomp 사용을 위한 어노테이션
@@ -22,16 +24,17 @@ import org.springframework.web.socket.config.annotation.*;
 @Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
+    @Autowired
+    private final StompInterceptor stompInterceptor;
 
-    public WebSocketConfig(JwtHandshakeInterceptor jwtHandshakeInterceptor) {
-        this.jwtHandshakeInterceptor = jwtHandshakeInterceptor;
+
+    public WebSocketConfig(StompInterceptor stompInterceptor) {
+        this.stompInterceptor = stompInterceptor;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .addInterceptors(jwtHandshakeInterceptor)
                 .setAllowedOriginPatterns("*");
 
 
@@ -59,16 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(new ChannelInterceptor() {
-            @Override
-            public Message<?> preSend(Message<?> message, MessageChannel channel) {
-                StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-                if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    log.info("STOMP Connection attempt: {}", accessor.getSessionId());
-                }
-                return message;
-            }
-        });
+        registration.interceptors(stompInterceptor);
     }
 
 }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.test.demo.dao.chat.ChatDAO;
 import com.test.demo.service.RedisService;
 import com.test.demo.vo.chat.ChatVO;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,25 +20,20 @@ import java.util.*;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class ChatService {
 
     private final ChatDAO chatDAO;
     private final RedisService redisService;
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    public ChatService(ChatDAO chatDAO, RedisService redisService, DateTimeFormatter formatter) {
-        this.chatDAO = chatDAO;
-        this.redisService = redisService;
-        this.formatter = formatter;
-
-    }
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 
 
-    // 메시지 저장
     public void saveMessage(String roomId, String sender, String receiver, String message, boolean isRead) {
         try {
-            // ChatVO 객체 생성
+            if (!roomId.startsWith("messages:")) {
+                roomId = "messages:" + URLDecoder.decode(roomId, "UTF-8");
+            }
             String roomDate = LocalDateTime.now().format(formatter);
             ChatVO chatVO = ChatVO.builder()
                     .roomId(roomId)
@@ -48,13 +44,12 @@ public class ChatService {
                     .isRead(isRead)
                     .build();
 
-            // 단일 객체를 리스트로 감싸서 Redis에 저장
-            List<ChatVO> messageList = new ArrayList<>();
-            messageList.add(chatVO);
+            List<ChatVO> messages = new ArrayList<>();
+            messages.add(chatVO);
+            redisService.setMessageList(roomId, messages, 60);
 
-            // Redis에 저장
-            redisService.setMessageList(roomId, messageList, 60);
-        } catch (DataAccessException e) {
+            log.info("메시지 저장 완료. Room ID: {}, Sender: {}, Message: {}", roomId, sender, message);
+        } catch (Exception e) {
             throw new RuntimeException("메시지 저장 중 오류가 발생했습니다: " + e.getMessage(), e);
         }
     }
@@ -65,7 +60,7 @@ public class ChatService {
 
             roomId = URLDecoder.decode(roomId, "UTF-8");
             // Redis에서 메시지 조회 (message:{roomId}:* 형태로)
-            String pattern = "message:" + roomId;
+            String pattern = "messages:" + roomId;
             List<ChatVO> messages =  redisService.getMessageList(pattern);
 
             if (messages == null) {
@@ -95,10 +90,11 @@ public class ChatService {
     // 메시지 삭제
     public void deleteMessage(String roomId, String roomDate) {
         try {
-            roomId = URLDecoder.decode(roomId, "UTF-8");
+            if (!roomId.startsWith("messages:")) {
+                roomId = "messages:" + URLDecoder.decode(roomId, "UTF-8");
+            }
             // Redis에서 roomId로 메시지 목록을 가져옴
-            String redisKey = "message:" + roomId;
-            List<ChatVO> chatList = redisService.getMessageList(redisKey);
+            List<ChatVO> chatList = redisService.getMessageList(roomId);
 
             // roomDate에 해당하는 메시지 찾기
             ChatVO messageToDelete = null;
@@ -113,7 +109,7 @@ public class ChatService {
             if (messageToDelete != null) {
                 chatList.remove(messageToDelete);
                 // Redis에 업데이트된 목록을 저장
-                redisService.setMessageList(redisKey, chatList,60);
+                redisService.setMessageList(roomId, chatList,60);
             }
 
             // DB에서 해당 메시지 삭제
@@ -127,6 +123,9 @@ public class ChatService {
 
     public void markMessagesAsRead(String roomId, List<Integer> messageIds, String receiver) {
         try {
+            if (!roomId.startsWith("messages:")) {
+                roomId = "messages:" + URLDecoder.decode(roomId, "UTF-8");
+            }
             // 1. Redis 업데이트
             redisService.updateMessageReadStatusInRedis(roomId, messageIds);
 

@@ -60,6 +60,7 @@ public class ChatController {
     public ResponseEntity<List<String>> room(@RequestHeader("x-sender") String sender) {
         try {
             // sender 값을 사용하여 채팅방 목록 조회
+//          얘는 prefix 상관x
             List<String> rooms = chatRoomService.findAllRoomById(sender);
             log.info(rooms.toString());
             return ResponseEntity.ok(rooms);
@@ -80,6 +81,7 @@ public class ChatController {
             String usertwo = requestBody.get("receiver");
             String roomId = ChatKey.generateSortedKey("message", userone,usertwo);
             log.info("Room Id : {}",roomId);
+//          아직 안되어 있다.
             chatRoomService.createRoom(userone, usertwo);
             return ResponseEntity.ok("sucess");
         } catch (Exception e) {
@@ -115,10 +117,8 @@ public class ChatController {
 
 
     @MessageMapping("/message")
-    public void handleMessage(@Payload ChatVO message, SimpMessageHeaderAccessor headerAccessor) {
+    public void handleMessage(@Payload ChatVO message) {
         try {
-            String email = (String) headerAccessor.getSessionAttributes().get("email");
-            log.info("Received message from: {}" + email);
             log.info("message: {}", message);
             chatService.saveMessage(message.getRoomId(), message.getSender(),message.getReceiver(), message.getMessage(), message.isRead());
             simpMessagingTemplate.convertAndSend("/sub/" + message.getRoomId(), message);

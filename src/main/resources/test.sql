@@ -18,3 +18,5 @@ CREATE TABLE chatroom (
                           user_two VARCHAR(255) NOT NULL,              -- 채팅 참여자 2
                           created_time DATETIME DEFAULT CURRENT_TIMESTAMP -- 방 생성 시간
 );
+
+TRUNCATE TABLE chat;

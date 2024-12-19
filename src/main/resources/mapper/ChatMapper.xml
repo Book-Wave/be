@@ -27,7 +27,7 @@
             sender AS sender,
             receiver AS receiver,
             message AS message,
-            time AS time,
+            time AS messagetime,
             is_read AS isRead
         FROM chat
         WHERE room_id = #{roomId}
