@@ -2,12 +2,16 @@ package com.test.demo.dao.chat;
 
 import com.test.demo.mapper.chat.ChatMapper;
 import com.test.demo.vo.chat.ChatVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @Repository
 public class ChatDAO {
 
@@ -25,10 +29,31 @@ public class ChatDAO {
         }
     }
 
+    // 메시지 삭제
+    public void deleteMessage(String roomId,String roomDate) {
+        if (chatMapper != null) {
+            chatMapper.deleteMessage(roomId,roomDate);
+        } else {
+            // chatMapper가 null일 때의 처리
+            System.out.println("chatMapper is null, skipping delete");
+        }
+    }
+
+    // 메시지 읽음 상태 업데이트
+    public void updateMessageReadStatus(Map<String, Object> params) {
+        if (chatMapper != null) {
+            chatMapper.updateMessageReadStatus(params);
+        } else {
+            System.out.println("chatMapper is null, skipping read status update");
+        }
+    }
+
+
     // 채팅 내역 불러오기
     public List<ChatVO> selectMessagesByRoomId(String roomId) {
         if (chatMapper != null) {
-            return chatMapper.selectMessagesByRoomId(roomId);
+
+            return chatMapper.selectMessagesByUserId(roomId);
         } else {
             // chatMapper가 null일 때, 빈 리스트 반환
             System.out.println("chatMapper is null, returning empty list");
@@ -36,13 +61,15 @@ public class ChatDAO {
         }
     }
 
-    // 메시지 삭제
-    public void deleteMessage(long id) {
-        if (chatMapper != null) {
-            chatMapper.deleteMessage(id);
+    public void insertBulkMessages(List<ChatVO> messages) {
+        if (chatMapper != null && !messages.isEmpty()) {
+            chatMapper.insertBulkMessages(messages);
         } else {
-            // chatMapper가 null일 때의 처리
-            System.out.println("chatMapper is null, skipping delete");
+            log.warn("chatMapper is null or messages list is empty, skipping bulk insert");
         }
     }
+
+
+
+
 }

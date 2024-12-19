@@ -3,6 +3,7 @@ package com.test.demo.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.test.demo.vo.chat.ChatVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,8 +28,9 @@ public class RedisConfig {
         return new LettuceConnectionFactory(host, port);
     }
 
-    @Bean
 
+    // 기본 RedisTemplate<String, Object> 설정
+    @Bean
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
@@ -36,25 +38,52 @@ public class RedisConfig {
         // 키는 String으로 직렬화
         redisTemplate.setKeySerializer(new StringRedisSerializer());
 
-        // Jackson ObjectMapper 설정
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule()); // Java 8 날짜/시간 모듈 등록
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO-8601 형식 사용
+        // 기본 값은 Jackson2JsonRedisSerializer 사용
+        Jackson2JsonRedisSerializer<Object> valueSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+        valueSerializer.setObjectMapper(objectMapper());
 
+        redisTemplate.setValueSerializer(valueSerializer);
+        redisTemplate.setHashValueSerializer(valueSerializer);
 
-
-        // Jackson2JsonRedisSerializer 설정
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        serializer.setObjectMapper(objectMapper);  // ObjectMapper 설정 (deprecated 된 방식)
-        // RedisTemplate에 직렬화 및 역직렬화 설정
-        log.info("직렬화 전: {}", serializer.toString());
-
-        redisTemplate.setValueSerializer(serializer); // 값에 대해 JSON 직렬화
-        log.info("직렬화 후: {}", serializer.toString());
-        redisTemplate.setHashValueSerializer(serializer); // Hash의 값에 대해 JSON 직렬화
-        log.info("역직렬화 후: {}",serializer.toString());
+        log.info("기본 RedisTemplate 설정 완료: ValueSerializer - Jackson2JsonRedisSerializer");
 
         return redisTemplate;
     }
 
+    @Bean
+    public RedisTemplate<String, ChatVO> chatRedisTemplate() {
+        RedisTemplate<String, ChatVO> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+
+        // 키는 String으로 직렬화
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+
+        // ChatVO에 맞는 ObjectMapper 설정
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // Java 8 날짜/시간 모듈
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO-8601 형식 사용
+
+        // ChatVO에 맞는 직렬화 설정
+        Jackson2JsonRedisSerializer<ChatVO> valueSerializer = new Jackson2JsonRedisSerializer<>(ChatVO.class);
+        valueSerializer.setObjectMapper(objectMapper);
+
+        redisTemplate.setValueSerializer(valueSerializer);
+        redisTemplate.setHashValueSerializer(valueSerializer);
+
+        log.info("ChatVO 전용 RedisTemplate 설정 완료");
+
+        return redisTemplate;
+    }
+
+
+
+
+
+    // ObjectMapper 설정 (공통적으로 사용)
+    private ObjectMapper objectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // Java 8 날짜/시간 모듈
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // ISO-8601 형식 사용
+        return objectMapper;
+    }
 }

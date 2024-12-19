@@ -7,26 +7,52 @@
 
     <!-- 메시지 저장 -->
     <insert id="insertMessage" parameterType="com.test.demo.vo.chat.ChatVO">
-        INSERT INTO chat (type, room_id, sender, message, time)
-        VALUES (#{type}, #{roomId}, #{sender}, #{message}, #{time})
+        INSERT INTO chat (room_id, sender, receiver, message, time, is_read)
+        VALUES ( #{roomId}, #{sender},#{receiver}, #{message}, #{messagetime}, #{isRead})
     </insert>
 
+    <!-- 메시지 삭제 -->
+    <delete id="deleteMessage" parameterType="String">
+        DELETE FROM chat
+        WHERE chat.room_id = #{roomId}
+          AND chat.time = #{roomDate}
+    </delete>
+
+
     <!-- 특정 채팅방의 메시지 조회 -->
-    <select id="selectMessagesByRoomId" parameterType="string" resultType="com.test.demo.vo.chat.ChatVO">
+    <select id="selectMessagesByUserId" parameterType="string" resultType="com.test.demo.vo.chat.ChatVO">
         SELECT
-            id AS id,
-            type AS type,
+            message_id AS id,
             room_id AS roomId,
             sender AS sender,
+            receiver AS receiver,
             message AS message,
-            time AS time
+            time AS messagetime,
+            is_read AS isRead
         FROM chat
         WHERE room_id = #{roomId}
+        ORDER BY time;
     </select>
 
-    <!-- 메시지 삭제 -->
-    <delete id="deleteMessage" parameterType="Long">
-        DELETE FROM chat WHERE id = #{id}
-    </delete>
+    <!-- 메세지 읽음 상태 변경   -->
+    <update id="updateMessageReadStatus" parameterType="map">
+        UPDATE chat
+        SET is_read = 1
+        WHERE message_id IN
+        <foreach item="id" collection="messageIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND receiver = #{receiver}
+    </update>
+
+    <insert id="insertBulkMessages" parameterType="java.util.List">
+        INSERT INTO chat (room_id, sender, receiver, message, time, is_read)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roomId}, #{item.sender}, #{item.receiver}, #{item.message}, #{item.messagetime}, #{item.isRead})
+        </foreach>
+    </insert>
+
+
 
 </mapper>

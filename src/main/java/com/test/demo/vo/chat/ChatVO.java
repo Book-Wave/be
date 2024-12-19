@@ -14,9 +14,10 @@ import java.time.LocalDateTime;
 @Builder
 public class ChatVO {
     private int messageId; // 메시지 ID (고유값)
-    private MessageType type; // 메시지 타입
     private String roomId;    // 방 ID
     private String sender;    // 보낸 사람
+    private String receiver;
     private String message;   // 메시지 내용
-    private String time; // 메시지 전송 시간
+    private String messagetime; // 메시지 전송 시간
+    private boolean isRead;
 }

@@ -5,8 +5,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://book-wave-db.cze40aa02479.ap-northeast-2.rds.amazonaws.com:3306/bw
-    username: admin
-    password: Dldirtm98!
+    username: jaeyu
+    password: Zhtxjf22!
   jackson:
     date-format: yyyy-MM-dd'T'HH:mm:ss
     serialization:
@@ -31,8 +31,8 @@ spring:
           naver:
             client-id: "ezcqOn0v8G6iwjVAX5yj"
             client-secret: "zXnmjUqVQR"
-#            redirect-uri: "http://localhost:3000/naver/callback"
             redirect-uri: "http://52.78.186.21/naver/callback"
+#            redirect-uri: "http://localhost:3000/naver/callback"
             authorization-grant-type: "authorization_code"
             scope: "name, email"
             client-name: "naver"
