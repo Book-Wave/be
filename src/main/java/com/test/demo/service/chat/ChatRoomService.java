@@ -1,15 +1,17 @@
 package com.test.demo.service.chat;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.test.demo.dao.chat.ChatRoomDAO;
 import com.test.demo.service.RedisService;
-import com.test.demo.vo.chat.ChatRoomVO;
+import com.test.demo.vo.chat.ChatVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -19,83 +21,95 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ChatRoomService {
     private final RedisService redisService; // RedisService 주입
-    private static final String CHAT_ROOM_PREFIX = "chatroom:";
-    private final ChatRoomDAO chatRoomDAO;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String CHAT_ROOM_PREFIX = "messages:";
+    private final ChatService chatService;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");;
 
-    //채팅방 불러오기
-    public List<ChatRoomVO> findAllRoom() {
+
+
+    public List<String> findAllRoomById(String sender) throws UnsupportedEncodingException {
+        sender = URLDecoder.decode(sender, "UTF-8");
         try {
-            List<ChatRoomVO> result = new ArrayList<>();
-            Set<String> keys = redisService.keys(CHAT_ROOM_PREFIX + "*");
-            for (String key : keys) {
-                // Redis에서 가져온 데이터를 Map으로 읽고 ChatRoomVO로 변환
-                Object redisData = redisService.get(key);
-                if (redisData != null) {
-                    // ObjectMapper를 사용해 LinkedHashMap을 ChatRoomVO로 변환
+            Set<String> roomKeys = redisService.keys(CHAT_ROOM_PREFIX + "*");
+            log.info("Found room keys: {}", roomKeys);
+            log.info("Decoded sender: {}", sender);
 
-                    ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
-                    result.add(roomVO);
+            Map<String, LocalDateTime> roomLastMessageTimes = new HashMap<>();
+
+            for (String roomKey : roomKeys) {
+                log.info("Processing room: {}", roomKey);
+
+                String[] parts = roomKey.split(":");
+                if (parts.length < 2) {
+                    log.warn("Invalid room key format: {}", roomKey);
+                    continue;
+                }
+
+                String users = parts[1];
+                String[] userParts = users.split("-");
+                if (userParts.length < 2) {
+                    log.warn("Invalid users format in room key: {}", users);
+                    continue;
+                }
+
+                String userOne = userParts[0];
+                String userTwo = userParts[1];
+
+                if (userOne.equals(sender) || userTwo.equals(sender)) {
+                    log.info("User {} is part of room: {}", sender, roomKey);
+
+                    List<ChatVO> messages = redisService.getMessageList(roomKey);
+                    if (!messages.isEmpty()) {
+                        String lastMessageTimeStr = messages.get(messages.size() - 1).getMessagetime();
+                        LocalDateTime lastMessageTime = LocalDateTime.parse(lastMessageTimeStr, formatter);
+                        roomLastMessageTimes.put(roomKey, lastMessageTime);
+                    }
                 }
             }
-            Collections.reverse(result); // 최근 생성 순으로 정렬
+
+            List<String> result = new ArrayList<>(roomLastMessageTimes.keySet());
+            result.sort((room1, room2) -> roomLastMessageTimes.get(room2).compareTo(roomLastMessageTimes.get(room1)));
+
+            log.info("Sorted rooms by last message time: {}", result);
             return result;
+
         } catch (Exception e) {
             log.error("채팅방 목록 조회 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("채팅방 목록을 불러오는 중 오류가 발생했습니다.", e);
         }
     }
 
-    //채팅방 하나 불러오기
-    public ChatRoomVO findById(String roomId) {
+
+    // 채팅방 생성
+    public void createRoom(String userOne, String userTwo) throws UnsupportedEncodingException {
+        userOne = URLDecoder.decode(userOne, StandardCharsets.UTF_8);
+        userTwo = URLDecoder.decode(userTwo, StandardCharsets.UTF_8);
+        String roomId = ChatKey.generateSortedKey("messages", userOne, userTwo);
         try {
-
-            Object redisData = redisService.get(CHAT_ROOM_PREFIX + roomId);
-
-            if (redisData == null) {
-                throw new NoSuchElementException("채팅방을 찾을 수 없습니다: " + roomId);
-            }
-            ChatRoomVO roomVO = new ObjectMapper().convertValue(redisData, ChatRoomVO.class);
-            return roomVO;
-        } catch (Exception e) {
-            log.error("채팅방 조회 중 오류 발생: {}", e.getMessage());
-            throw new RuntimeException("채팅방 조회 중 오류가 발생했습니다.", e);
-        }
-    }
-
-
-    //채팅방 생성
-    public void createRoom(String roomname, String userone, String usertwo) {
-        try {
-            if(usertwo == null || usertwo.isEmpty()) {
-                usertwo = "";
+            if (redisService.exists(roomId)) {
+                throw new IllegalStateException("이미 존재하는 채팅방입니다: " + roomId);
             }
 
-            String roomDate = LocalDateTime.now().format(formatter);
-            ChatRoomVO roomVO = new ChatRoomVO(UUID.randomUUID().toString(),roomname, userone, usertwo , roomDate);
+            // 채팅방 초기 메시지 생성
+            ChatVO chatVO = new ChatVO();
+            chatVO.setRoomId(roomId);
+            chatVO.setMessagetime(LocalDateTime.now().format(formatter));
+            chatVO.setSender(userOne);
+            chatVO.setReceiver(userTwo);
+            chatVO.setMessage("방이 생성되었습니다.");
+            chatVO.setRead(false);
 
-            log.info("새로운 채팅방 생성: ID = {}", roomVO.getRoomId());
-            redisService.set(CHAT_ROOM_PREFIX + roomVO.getRoomId(), roomVO, 3600); // Redis에 저장 (TTL 1시간)
+            // 메시지 리스트 생성 및 Redis 저장
+            List<ChatVO> messages = new ArrayList<>();
+            messages.add(chatVO);
+
+            redisService.setMessageList(roomId, messages, 60); // TTL 1시간
+            log.info("새로운 채팅방 생성 완료: ID = {}", roomId);
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("채팅방 생성 중 오류가 발생했습니다.", e);
         }
     }
 
-    @Scheduled(fixedRate = 60000) // 1분마다 실행
-    public void syncRoomsToDB() {
-        Set<String> keys = redisService.keys(CHAT_ROOM_PREFIX + "*");
-        for (String key : keys) {
-            try {
-                ChatRoomVO roomVO = (ChatRoomVO) redisService.get(key);
-                if (roomVO != null) {
-                    // MyBatis 매퍼를 통해 DB에 저장
-                    chatRoomDAO.insertOrUpdateChatRoom(roomVO);
-                    log.info("채팅방 동기화 완료: {}", roomVO.getRoomId());
-                }
-            } catch (Exception e) {
-                log.error("Redis에서 DB로 채팅방 동기화 중 오류 발생: {}", e.getMessage());
-            }
-        }
-    }
+
 }

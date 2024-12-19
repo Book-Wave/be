@@ -27,10 +27,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        if (request.getRequestURI().startsWith("/book/auth/")) {
+        if (request.getRequestURI().startsWith("/book/auth/") || request.getRequestURI().startsWith("/ws")) {
             chain.doFilter(request, response); // 필터 검사 제외
             return;
         }
+
         logger.info("JwtAuthenticationFilter 내부에 진입");
         String access_token = jwtTokenProvider.resolveToken(request);
         if (access_token != null) {

@@ -2,20 +2,23 @@ package com.test.demo.controller;
 
 
 import com.test.demo.RedisTest;
+import com.test.demo.service.chat.ChatKey;
 import com.test.demo.vo.chat.ChatVO;
-import com.test.demo.vo.chat.ChatRoomVO;
 import com.test.demo.service.chat.ChatRoomService;
 import com.test.demo.service.chat.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
@@ -42,12 +45,23 @@ public class ChatController {
 *
 * */
 
+    @GetMapping("/nickname")
+    public ResponseEntity<String> getNickname() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userone = (String) authentication.getDetails();
+        return ResponseEntity.ok(userone);
+    }
+
+
+
     //  일반url
     // 모든 채팅방 목록 반환
     @GetMapping(value = "/rooms")
-    public ResponseEntity<List<ChatRoomVO>> room() {
+    public ResponseEntity<List<String>> room(@RequestHeader("x-sender") String sender) {
         try {
-            List<ChatRoomVO> rooms = chatRoomService.findAllRoom();
+            // sender 값을 사용하여 채팅방 목록 조회
+//          얘는 prefix 상관x
+            List<String> rooms = chatRoomService.findAllRoomById(sender);
             log.info(rooms.toString());
             return ResponseEntity.ok(rooms);
         } catch (Exception e) {
@@ -63,13 +77,12 @@ public class ChatController {
     @PostMapping("/rooms")
     public ResponseEntity<String> createRoom(@RequestBody Map<String, String> requestBody) {
         try {
-            String userone = requestBody.get("userone");
-            String usertwo = requestBody.get("usertwo");
-            String roomname = requestBody.get("roomName");
-//            if (name == null || name.isEmpty()) {
-//                throw new IllegalArgumentException("name은 필수 값입니다.");
-//            }
-            chatRoomService.createRoom(roomname, userone, usertwo);
+            String userone = requestBody.get("sender");
+            String usertwo = requestBody.get("receiver");
+            String roomId = ChatKey.generateSortedKey("message", userone,usertwo);
+            log.info("Room Id : {}",roomId);
+//          아직 안되어 있다.
+            chatRoomService.createRoom(userone, usertwo);
             return ResponseEntity.ok("sucess");
         } catch (Exception e) {
             log.error("채팅방 생성 중 오류 발생: {}", e.getMessage());
@@ -78,19 +91,6 @@ public class ChatController {
     }
 
 
-
-    // 특정 채팅방 조회
-    // 일반 url
-    @GetMapping("/rooms/{roomId}")
-    public ResponseEntity<ChatRoomVO> roomInfo(@PathVariable String roomId) {
-        try {
-            ChatRoomVO room = chatRoomService.findById(roomId);
-            return ResponseEntity.ok(room);
-        } catch (Exception e) {
-            log.error("채팅방 조회 중 오류 발생: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
 
     /*
     * 1. 프론트에서 채널 구독
@@ -114,11 +114,13 @@ public class ChatController {
 //  @SendTo("/sub/{roomId}")
 //    이 서비스에서 지금 발간된 메세지를 일단 저장
 //return하거나 convertandsend 메서드를 통해 /sub/roomid에 구독된 사용자들에게 메세지 전송
+
+
     @MessageMapping("/message")
     public void handleMessage(@Payload ChatVO message) {
         try {
             log.info("message: {}", message);
-            chatService.saveMessage(message.getRoomId(), message.getSender(), message.getMessage(), message.getType());
+            chatService.saveMessage(message.getRoomId(), message.getSender(),message.getReceiver(), message.getMessage(), message.isRead());
             simpMessagingTemplate.convertAndSend("/sub/" + message.getRoomId(), message);
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생: {}", e.getMessage());
@@ -127,12 +129,10 @@ public class ChatController {
 
     // 특정 채팅방의 메시지 조회
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<List<ChatVO>> getMessagesByRoomId(@PathVariable String roomId, @RequestParam String sender) {
+    public ResponseEntity<List<ChatVO>> getMessagesByRoomId(@PathVariable String roomId) {
         try {
-            System.out.println("메세지 조회");
-            log.info("sender = {}",sender);
-            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId, sender);
-            log.info(messages.toString());
+            List<ChatVO> messages = chatService.findMessagesByRoomId(roomId);
+            log.info("클라이언트로 보낼 메세지 {}",messages.toString());
             return ResponseEntity.ok(messages);
         } catch (Exception e) {
             log.error("메시지 조회 중 오류 발생: {}", e.getMessage());
@@ -141,10 +141,10 @@ public class ChatController {
     }
 
     // 메시지 삭제
-    @DeleteMapping("/rooms/{roomId}/messages/{messageId}")
-    public ResponseEntity<Void> deleteMessage(@PathVariable String roomId, @PathVariable Long messageId) {
+    @DeleteMapping("/rooms/{roomId}/messages/{roomDate}")
+    public ResponseEntity<Void> deleteMessage(@PathVariable String roomId, @PathVariable String roomDate) {
         try {
-            chatService.deleteMessage(roomId,messageId);
+            chatService.deleteMessage(roomId, roomDate);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("메시지 삭제 중 오류 발생: {}", e.getMessage());
@@ -156,6 +156,27 @@ public class ChatController {
     public void test() {
         redisTest.testRedis();
 
+    }
+
+    @PostMapping("/rooms/{roomId}/read")
+    public ResponseEntity<?> markMessagesAsRead(
+            @PathVariable String roomId,
+            @RequestBody Map<String, Object> payload) {
+        try {
+            List<Integer> messageIds = (List<Integer>) payload.get("messageIds");
+            String receiver = (String) payload.get("receiver");
+
+            if (messageIds == null || receiver == null) {
+                return ResponseEntity.badRequest().body("Invalid request payload");
+            }
+
+            chatService.markMessagesAsRead(roomId, messageIds, receiver);
+
+            return ResponseEntity.ok("메시지 읽음 상태가 업데이트되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("메시지 읽음 처리 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 
 }

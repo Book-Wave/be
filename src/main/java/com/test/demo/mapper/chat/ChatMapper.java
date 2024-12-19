@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 
 import java.util.List;
+import java.util.Map;
 
 
 @Mapper
@@ -15,9 +16,15 @@ public interface ChatMapper {
     void insertMessage(ChatVO chatVO);
 
 //  채팅 내역 불러오기
-    List<ChatVO> selectMessagesByRoomId(String roomId);
+    List<ChatVO> selectMessagesByUserId(String roomId);
 
 //  메세지 삭제
-    void deleteMessage(long id);
+    void deleteMessage(String roomId, String roomDate);
+
+    // 메시지 읽음 상태 업데이트
+    void updateMessageReadStatus(Map<String, Object> params);
+
+    void insertBulkMessages(List<ChatVO> messages);
+
 
 }
