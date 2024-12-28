@@ -7,11 +7,13 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -22,6 +24,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.sql.DataSource;
+import java.time.format.DateTimeFormatter;
 
 @Configuration
 @EnableTransactionManagement
@@ -30,11 +33,14 @@ public class RootConfig {
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
+    @Bean
+    public ObjectMapper objectMapper() { return new ObjectMapper(); }
 
     @Value("${spring.datasource.driver-class-name}") String driver;
     @Value("${spring.datasource.url}") String url;
     @Value("${spring.datasource.username}") String username;
     @Value("${spring.datasource.password}") String password;
+
 
 
     @Bean
@@ -77,8 +83,9 @@ public class RootConfig {
     }
 
 
-//    @Bean
-//    public ObjectMapper objectMapper() {
-//        return new ObjectMapper(); // Jackson ObjectMapper 빈 등록
-//    }
+    @Bean
+    public DateTimeFormatter dateTimeFormatter() {
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    }
+
 }

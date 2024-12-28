@@ -1,32 +1,68 @@
 package com.test.demo.config;
 
+import com.test.demo.config.jwt.StompInterceptor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.web.socket.config.annotation.*;
+import org.springframework.web.socket.server.HandshakeInterceptor;
 
 @Configuration
 //stomp 사용을 위한 어노테이션
 //stomp는 메세지 전송을 효율적으로 하기위한 프로토콜 pub/sub 구조
 //websocket위에서 작동하는 프로토콜, 클라이언트와 서버가 전송할 메세지들을 정의한다.
 @EnableWebSocketMessageBroker
+@EnableWebSocket
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Autowired
+    private final StompInterceptor stompInterceptor;
+
+
+    public WebSocketConfig(StompInterceptor stompInterceptor) {
+        this.stompInterceptor = stompInterceptor;
+    }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/book/chat")
-                .setAllowedOrigins("http://localhost:8080")
-                .withSockJS();
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*");
+
+
     }
 
-    /*어플리케이션 내부에서 사용할 path를 지정할 수 있음*/
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-//      클라이언트에서 보낸 메세지를 받은 prefix
-        registry.setApplicationDestinationPrefixes("/send");
-        registry.enableSimpleBroker("/room");
+
+//      여기 모드 클라이언트 -> 서버의 url 경로를 설정한다
+//      publisher -> messagebroker -> subscriber 구성
+//      순서가 1. 구독 2. 메세지 발생 -> 해당 roomId에 메세지를 보낸다 -> convertandsend 등으로 보낸다
+
+        registry.enableSimpleBroker( "/sub");
+        registry.setApplicationDestinationPrefixes("/pub");
+
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(8192)  // 메시지 크기 제한
+                .setSendBufferSizeLimit(8192)  // 버퍼 크기 제한
+                .setSendTimeLimit(10000);  // 전송 시간 제한
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompInterceptor);
     }
 
 }
