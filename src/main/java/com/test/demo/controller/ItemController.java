@@ -1,132 +1,290 @@
 package com.test.demo.controller;
 
-// 서비스 계층과 연결
-import com.test.demo.service.ItemService; // ItemService 인터페이스를 import
-import com.test.demo.vo.ItemVo; // VO(Value Object) 클래스 import, 요청 및 응답 데이터 구조
-
-// Spring Framework 어노테이션과 클래스
-import org.springframework.beans.factory.annotation.Autowired; // 의존성 주입을 위한 어노테이션
+import com.test.demo.service.ItemService;
+import com.test.demo.vo.ItemVo;
+import com.test.demo.vo.PostVo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity; // HTTP 응답을 표현하는 클래스
-import org.springframework.web.bind.annotation.*; // RESTful API 요청 처리에 필요한 어노테이션 세트
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-// 네이버 api utf-8 인코딩
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-
-// Java 기본 라이브러리
-import java.util.List; // 리스트 데이터 구조를 사용하기 위한 import
-import java.util.Map; // 키-값 쌍 데이터 구조를 사용하기 위한 import
-
-
+import java.util.*;
 
 /**
- * REST API 요청을 처리하는 ItemController 클래스
+ * ItemController: REST API 요청을 처리하는 컨트롤러
  */
-@RestController // REST API 요청을 처리하는 컨트롤러 클래스
+@RestController
 @RequestMapping("/book/item") // 기본 URL 경로 설정
 public class ItemController {
 
-    @Autowired // 서비스 계층의 의존성을 자동으로 주입
+    @Autowired // ItemService를 주입받아 서비스 계층에 접근
     private ItemService itemService;
 
-    // 네이버 API 클라이언트 정보
-    private final String CLIENT_ID = "1OVKwoLQ_G3UrjXzFI6Y"; // 네이버 API 클라이언트 ID
-    private final String CLIENT_SECRET = "jIwxdPxoNm"; // 네이버 API 클라이언트 Secret
+    // 상품 관련 메서드
 
-    @GetMapping("/list") // HTTP GET 요청 처리
+    // 상품 목록 조회
+    @GetMapping("/list")
     public ResponseEntity<List<ItemVo>> getItems(@RequestParam Map<String, Object> params) {
-        // 서비스 계층에서 상품 목록 데이터 조회
         return ResponseEntity.ok(itemService.getItems(params));
     }
 
-    @GetMapping("/{item_id}") // URL 경로에서 item_id를 전달받아 처리
-    public ResponseEntity<ItemVo> getItemDetail(@PathVariable int item_id) {
-        // 서비스 계층에서 상품 상세 정보 조회
-        return ResponseEntity.ok(itemService.getItemDetail(item_id));
-    }
+    // 페이지네이션된 상품 목록 조회
+    @GetMapping("/list/page")
+    public ResponseEntity<Map<String, Object>> getPaginatedItems(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "1 0") int size
+    ) {
+        // 수정 가능한 Map 생성
+        Map<String, Object> params = new HashMap<>();
+        params.put("offset", (page - 1) * size);
+        params.put("limit", size);
 
-    @GetMapping("/register/{item_id}") // HTTP GET 요청 처리 (정가 비교)
-    public ResponseEntity<Map<String, Object>> comparePrice(@PathVariable int item_id) {
-        // 서비스 계층에서 정가 비교 및 추가 정보 조회
-        Map<String, Object> response = itemService.comparePrice(item_id);
+        // 서비스 호출
+        List<ItemVo> items = itemService.getItems(params);
+        int totalCount = itemService.getTotalItemCount();
+
+        // 응답 데이터 생성
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", items);
+        response.put("currentPage", page);
+        response.put("pageSize", size);
+        response.put("totalItems", totalCount);
+        response.put("totalPages", (int) Math.ceil((double) totalCount / size));
+
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/register") // HTTP POST 요청 처리
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<Map<String, Object>>> getCategories() {
+        List<Map<String, Object>> categories = Arrays.asList(
+                Map.of("category_id", 1, "category_name", "총류"),
+                Map.of("category_id", 2, "category_name", "철학"),
+                Map.of("category_id", 3, "category_name", "종교"),
+                Map.of("category_id", 4, "category_name", "사회과학"),
+                Map.of("category_id", 5, "category_name", "자연과학"),
+                Map.of("category_id", 6, "category_name", "기술과학"),
+                Map.of("category_id", 7, "category_name", "예술"),
+                Map.of("category_id", 8, "category_name", "언어"),
+                Map.of("category_id", 9, "category_name", "문학"),
+                Map.of("category_id", 10, "category_name", "역사"),
+                Map.of("category_id", 11, "category_name", "기타")
+        );
+        return ResponseEntity.ok(categories);
+    }
+
+    // 특정 상품 상세 조회
+    @GetMapping("/{itemId}")
+    public ResponseEntity<ItemVo> getItemDetail(@PathVariable int itemId) {
+        itemService.increaseView(itemId); // 조회수 증가
+        return ResponseEntity.ok(itemService.getItemDetail(itemId));
+    }
+
+    // 상품 등록
+    @PostMapping("/register")
     public ResponseEntity<String> registerItem(@RequestBody ItemVo item) {
-        // 서비스 계층에서 상품 데이터 등록
         itemService.registerItem(item);
         return ResponseEntity.ok("상품 등록 성공");
     }
 
-    @PutMapping("/{item_id}/update") // HTTP PUT 요청 처리
-    public ResponseEntity<String> updateItem(@PathVariable int item_id, @RequestBody ItemVo item) {
-        // 서비스 계층에서 상품 데이터 수정
-        itemService.updateItem(item_id, item);
+    // 상품 수정
+    @PutMapping("/{itemId}/update")
+    public ResponseEntity<String> updateItem(@PathVariable int itemId, @RequestBody ItemVo item) {
+        itemService.updateItem(itemId, item);
         return ResponseEntity.ok("상품 수정 성공");
     }
 
-    @DeleteMapping("/{item_id}/delete") // HTTP DELETE 요청 처리
-    public ResponseEntity<String> deleteItem(@PathVariable int item_id) {
-        // 서비스 계층에서 상품 데이터 삭제
-        itemService.deleteItem(item_id);
+    // 상품 삭제
+    @DeleteMapping("/{itemId}/delete")
+    public ResponseEntity<String> deleteItem(@PathVariable int itemId) {
+        itemService.deleteItem(itemId);
         return ResponseEntity.ok("상품 삭제 성공");
     }
 
-    @PutMapping("/{item_id}/views") // HTTP PUT 요청 처리 (조회수 증가)
-    public ResponseEntity<Map<String, Object>> increaseView(@PathVariable int item_id) {
-        // 서비스 계층에서 조회수 증가
-        int updatedViewCount = itemService.increaseView(item_id);
-        Map<String, Object> response = Map.of("message", "조회수 증가 성공", "viewCount", updatedViewCount);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/{item_id}/zzim") // HTTP POST 요청 처리 (찜하기)
-    public ResponseEntity<String> addZzim(@PathVariable int item_id, @RequestParam int buyer_id) {
-        // 서비스 계층에서 찜하기 추가
-        itemService.addZzim(item_id, buyer_id);
+    // 찜 추가
+    @PostMapping("/{itemId}/zzim")
+    public ResponseEntity<String> addZzim(@PathVariable int itemId, @RequestParam int buyerId) {
+        itemService.addZzim(itemId, buyerId);
         return ResponseEntity.ok("상품 찜 성공");
     }
 
+    // 판매 게시물 관련 메서드
 
+    // 판매 게시물 목록 조회
+    @GetMapping("/post/list")
+    public ResponseEntity<List<PostVo>> getPosts(@RequestParam Map<String, Object> params) {
+        return ResponseEntity.ok(itemService.getPosts(params));
+    }
 
-    @GetMapping("/search") // HTTP GET 요청 처리 (네이버 책 검색 API)
-    public ResponseEntity<String> searchBooks(
-            @RequestParam String query, // 필수: 검색어
-            @RequestParam(required = false, defaultValue = "10") int display, // 선택: 결과 개수 (기본값 10)
-            @RequestParam(required = false, defaultValue = "1") int start,    // 선택: 시작 위치 (기본값 1)
-            @RequestParam(required = false, defaultValue = "sim") String sort // 선택: 정렬 방식 (기본값 sim)
-    ) {
+    // 특정 판매 게시물 상세 조회
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<PostVo> getPostDetail(@PathVariable int postId) {
+        return ResponseEntity.ok(itemService.getPostDetail(postId));
+    }
+
+    // 판매 게시물 등록
+    @PostMapping("/post/register")
+    public ResponseEntity<String> registerPost(@RequestBody PostVo post) {
+        itemService.registerPost(post);
+        return ResponseEntity.ok("판매 게시물 등록 성공");
+    }
+
+    // 판매 게시물 수정
+    @PutMapping("/post/{postId}/update")
+    public ResponseEntity<String> updatePost(@PathVariable int postId, @RequestBody PostVo post) {
+        itemService.updatePost(postId, post);
+        return ResponseEntity.ok("판매 게시물 수정 성공");
+    }
+
+    // 판매 게시물 삭제
+    @DeleteMapping("/post/{postId}/delete")
+    public ResponseEntity<String> deletePost(@PathVariable int postId) {
+        itemService.deletePost(postId);
+        return ResponseEntity.ok("판매 게시물 삭제 성공");
+    }
+
+    // 네이버 API 키
+    private final String CLIENT_ID = "1OVKwoLQ_G3UrjXzFI6Y";
+    private final String CLIENT_SECRET = "UONgp6mBRe";
+
+    // 책 검색 API 호출
+    @GetMapping("/search")
+    public ResponseEntity<Object> searchBooks(@RequestParam String query) {
         try {
-            // query 값을 UTF-8로 URL 인코딩
-            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+            // API URL
+            String apiUrl = "https://openapi.naver.com/v1/search/book.json?query=" + query + "&display=5";
 
-            // 네이버 API URL 설정
-            String apiUrl = "https://openapi.naver.com/v1/search/book.json";
-            String url = String.format("%s?query=%s&display=%d&start=%d&sort=%s",
-                    apiUrl, encodedQuery, display, start, sort);
+            // 로그 출력
+            System.out.println("API 호출 URL: " + apiUrl);
 
-            // RestTemplate 생성
+            // RestTemplate 객체 생성
             RestTemplate restTemplate = new RestTemplate();
 
             // 요청 헤더 설정
             HttpHeaders headers = new HttpHeaders();
-            headers.add("X-Naver-Client-Id", CLIENT_ID); // 네이버 클라이언트 ID
-            headers.add("X-Naver-Client-Secret", CLIENT_SECRET); // 네이버 클라이언트 Secret
+            headers.add("X-Naver-Client-Id", CLIENT_ID);
+            headers.add("X-Naver-Client-Secret", CLIENT_SECRET);
 
-            HttpEntity<Void> request = new HttpEntity<>(headers);
+            // 요청 엔티티 생성
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
             // 네이버 API 호출
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url, org.springframework.http.HttpMethod.GET, request, String.class);
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    apiUrl, org.springframework.http.HttpMethod.GET, requestEntity, Map.class
+            );
 
-            // 성공 시 응답 반환
-            return ResponseEntity.ok(response.getBody());
+            // API 응답 데이터 로깅
+            System.out.println("네이버 API 응답: " + response.getBody());
+
+            // 응답 데이터 파싱
+            List<Map<String, String>> books = new ArrayList<>();
+            List<Map<String, Object>> items = (List<Map<String, Object>>) response.getBody().get("items");
+
+            for (Map<String, Object> item : items) {
+                Map<String, String> book = new HashMap<>();
+                book.put("title", item.get("title").toString());
+                book.put("link", item.get("link").toString());
+                book.put("image", item.get("image").toString());
+                book.put("author", item.get("author").toString());
+                book.put("publisher", item.get("publisher").toString());
+                book.put("description", item.get("description").toString());
+                books.add(book);
+            }
+
+            // 파싱 결과 반환
+            return ResponseEntity.ok(books);
+
         } catch (Exception e) {
-            // 오류 발생 시 처리
+            e.printStackTrace();
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
+
+//    @GetMapping("/search2")
+//    public ResponseEntity<Object> searchBooks2(@RequestParam String query) {
+//        try {
+//            // URL 인코딩된 검색어 포함된 API URL
+//
+//            String apiUrl = "https://openapi.naver.com/v1/search/book.json?query=" + query + "&display=5";
+//
+//            // RestTemplate 초기화
+//            RestTemplate restTemplate = new RestTemplate();
+//
+//            // 요청 헤더 설정
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.add("X-Naver-Client-Id", CLIENT_ID);
+//            headers.add("X-Naver-Client-Secret", CLIENT_SECRET);
+//
+//            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+//
+//            // API 호출
+//            ResponseEntity<Map> response = restTemplate.exchange(
+//                    apiUrl, org.springframework.http.HttpMethod.GET, requestEntity, Map.class
+//            );
+//
+//            // API 요청 및 응답 확인
+//            System.out.println("Encoded API 호출 URL: " + apiUrl);
+//            System.out.println("Headers: " + headers);
+//            System.out.println("API Response: " + response.getBody());
+//
+//            // 결과 반환
+//            return ResponseEntity.ok(response.getBody());
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+//        }
+//    }
+//
+//    @GetMapping("/search/test")
+//    public ResponseEntity<Object> searchBooksTest(@RequestParam String query) {
+//        try {
+//            // 동적 URL 생성
+//            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+//            String apiUrl = "https://openapi.naver.com/v1/search/book.json?query=" + encodedQuery + "&display=5";
+//
+//            // 하드코딩된 URL
+//            String hardcodedUrl = "https://openapi.naver.com/v1/search/book.json?query=소나기&display=5";
+//
+//            // RestTemplate 생성
+//            RestTemplate restTemplate = new RestTemplate();
+//
+//            // 요청 헤더 설정
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.add("X-Naver-Client-Id", CLIENT_ID);
+//            headers.add("X-Naver-Client-Secret", CLIENT_SECRET);
+//            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+//
+//            // 동적 URL 호출
+//            ResponseEntity<Map> dynamicResponse = restTemplate.exchange(apiUrl, org.springframework.http.HttpMethod.GET, requestEntity, Map.class);
+//
+//            // 하드코딩된 URL 호출
+//            ResponseEntity<Map> hardcodedResponse = restTemplate.exchange(hardcodedUrl, org.springframework.http.HttpMethod.GET, requestEntity, Map.class);
+//
+//            // 응답 비교
+//            Map<String, Object> comparison = new HashMap<>();
+//            comparison.put("dynamicUrl", apiUrl);
+//            comparison.put("hardcodedUrl", hardcodedUrl);
+//            comparison.put("dynamicResponse", dynamicResponse.getBody());
+//            comparison.put("hardcodedResponse", hardcodedResponse.getBody());
+//            System.out.println("Dynamic URL Response: " + dynamicResponse);
+//            System.out.println("API Request Headers: " + headers.toString());
+//            System.out.println("API Request URL: " + apiUrl);
+//
+//
+//            return ResponseEntity.ok(comparison);
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+//        }
+//    }
+//
+//
+//
+
 }

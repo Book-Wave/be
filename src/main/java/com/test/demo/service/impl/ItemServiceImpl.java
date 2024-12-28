@@ -1,77 +1,146 @@
 package com.test.demo.service.impl;
 
-import com.test.demo.dao.ItemDao; // ItemDao 인터페이스 import
-import com.test.demo.service.ItemService; // ItemService 인터페이스 import
-import com.test.demo.vo.ItemVo; // ItemVo 클래스 import
-import org.springframework.beans.factory.annotation.Autowired; // 의존성 주입을 위한 어노테이션
-import org.springframework.stereotype.Service; // 서비스 계층으로 등록하기 위한 어노테이션
-
-import java.util.List; // 리스트 데이터 구조를 사용하기 위한 import
-import java.util.Map; // 키-값 데이터 구조를 사용하기 위한 import
-import java.util.HashMap; // 정가 비교 결과를 반환하기 위한 데이터 구조
-
+import com.test.demo.dao.ItemDao;
+import com.test.demo.service.ItemService;
+import com.test.demo.vo.ItemVo;
+import com.test.demo.vo.PostVo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.test.demo.mapper.CategoryMapper;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 /**
- * ItemServiceImpl 클래스
- * 서비스 계층에서 비즈니스 로직 구현
+ * ItemServiceImpl: 서비스 계층 구현
  */
-@Service // 스프링 서비스 계층으로 등록
+@Service
 public class ItemServiceImpl implements ItemService {
 
-    @Autowired // 의존성 주입
+    @Autowired // ItemDao를 주입받아 데이터베이스 접근
     private ItemDao itemDao;
+
+    // 상품 관련 메서드
 
     @Override
     public List<ItemVo> getItems(Map<String, Object> params) {
-        // 상품 목록 조회
-        return itemDao.selectItems(params);
+        // 새로운 수정 가능한 Map 생성
+        Map<String, Object> mutableParams = new HashMap<>(params);
+
+        // 기본값 설정
+        int offset = mutableParams.get("offset") != null ? Integer.parseInt(mutableParams.get("offset").toString()) : 0;
+        int limit = mutableParams.get("limit") != null ? Integer.parseInt(mutableParams.get("limit").toString()) : 10;
+
+        // 수정 가능한 Map에 값 추가
+        mutableParams.put("offset", offset);
+        mutableParams.put("limit", limit);
+
+        // DAO 호출
+        return itemDao.selectItems(mutableParams);
     }
+
 
     @Override
     public ItemVo getItemDetail(int itemId) {
-        // 특정 상품 상세 정보 조회
+        // 특정 상품의 상세 정보를 조회하기 전에 조회수 증가
+        itemDao.increaseView(itemId);
+        // 상품 상세 정보 반환
         return itemDao.selectItemDetail(itemId);
     }
 
     @Override
     public void registerItem(ItemVo item) {
-        // 상품 등록
+
+        // 날짜 설정
+        item.setRegDate(LocalDateTime.now());
+        item.setModDate(LocalDateTime.now());
+
+        // DB에 삽입
         itemDao.insertItem(item);
     }
 
     @Override
     public void updateItem(int itemId, ItemVo item) {
-        // 상품 ID를 설정한 후 업데이트 수행
+        // 상품 수정 시 itemId를 설정하고 수정 날짜를 현재 날짜로 갱신
         item.setItemId(itemId);
+        item.setModDate(LocalDateTime.now());
+        // 수정된 상품 정보를 DB에 저장
         itemDao.updateItem(item);
     }
 
     @Override
     public void deleteItem(int itemId) {
-        // 상품 삭제
+        // 특정 상품을 삭제
         itemDao.deleteItem(itemId);
     }
 
     @Override
     public int increaseView(int itemId) {
-        // 조회수를 증가시키고 새로운 조회수를 반환
+        // 조회수를 1 증가시키고, 현재 조회수를 반환
         itemDao.increaseView(itemId);
         return itemDao.getViewCount(itemId);
     }
 
     @Override
     public void addZzim(int itemId, int buyerId) {
-        // 찜하기 데이터 추가
+        // 특정 상품을 찜 목록에 추가
         itemDao.addZzim(itemId, buyerId);
     }
 
+    // 판매 게시물 관련 메서드
+
     @Override
-    public Map<String, Object> comparePrice(int itemId) {
-        // 상품의 정가와 현재 가격 비교
-        ItemVo item = itemDao.selectItemDetail(itemId);
-        Map<String, Object> result = new HashMap<>();
-        result.put("originalPrice", item.getOriPrice());
-        result.put("currentPrice", item.getPrice());
-        result.put("difference", item.getOriPrice() - item.getPrice());
-        return result;
+    public List<PostVo> getPosts(Map<String, Object> params) {
+        // 조건에 맞는 판매 게시물 목록을 조회
+        return itemDao.selectPosts(params);
+    }
+
+    @Override
+    public PostVo getPostDetail(int postId) {
+        // 특정 판매 게시물의 상세 정보를 조회
+        return itemDao.selectPostDetail(postId);
+    }
+
+    @Override
+    public void registerPost(PostVo post) {
+        // 등록 날짜와 수정 날짜를 현재 날짜와 시간으로 설정
+        post.setRegDate(LocalDateTime.now());
+        post.setModDate(LocalDateTime.now());
+
+        // 게시물 정보를 DB에 삽입
+        itemDao.insertPost(post);
+    }
+
+    @Override
+    public void updatePost(int postId, PostVo post) {
+        // 게시물 수정 시 postId를 설정하고 수정 날짜를 현재 날짜로 갱신
+        post.setPostId(postId);
+        post.setModDate(LocalDateTime.now());
+        // 수정된 판매 게시물 정보를 DB에 저장
+        itemDao.updatePost(post);
+    }
+
+    @Override
+    public void deletePost(int postId) {
+        // 특정 판매 게시물을 삭제
+        itemDao.deletePost(postId);
+    }
+
+    @Override
+    public String getCategoryName(int categoryId) {
+        // CategoryMapper 클래스의 static 메서드를 호출하여 카테고리 이름 반환
+        return CategoryMapper.getCategoryName(categoryId);
+    }
+
+    // 페이지네이션 기능
+    @Override
+    public List<ItemVo> getItemsWithPagination(int page, int size) {
+        int offset = (page - 1) * size; // 페이지 번호를 offset으로 변환 (0부터 시작)
+        return itemDao.selectItemsWithPagination(offset, size);
+    }
+    @Override
+    public int getTotalItemCount() {
+        // ItemDao를 통해 전체 상품 개수를 가져옴
+        return itemDao.selectTotalItemCount();
     }
 }

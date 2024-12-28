@@ -5,37 +5,64 @@
 
 <mapper namespace="com.test.demo.dao.ItemDao">
 
-    <!-- 데이터 삽입 -->
+    <!-- 상품 데이터 삽입 -->
     <insert id="insertItem" parameterType="com.test.demo.vo.ItemVo">
-        INSERT INTO item (item_name, category, seller_id, buyer_id, view, trade, status, price, reg_date, mod_date)
-        VALUES (#{itemName}, #{category}, #{sellerId}, #{buyerId}, #{view}, #{trade}, #{status}, #{price}, NOW(), NOW())
+        INSERT INTO item (
+            item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
+            link, image, author, publisher, description, reg_date, mod_date
+        ) VALUES (
+                     #{itemName}, #{category}, #{sellerId}, #{buyerId}, #{view}, #{trade}, #{status}, #{price}, #{oriPrice},
+                     #{link}, #{image}, #{author}, #{publisher}, #{description}, NOW(), NOW()
+                 )
     </insert>
 
-
-    <!-- 데이터 조회 -->
+    <!-- 상품 데이터 조회 -->
     <select id="selectItems" resultType="com.test.demo.vo.ItemVo">
-        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, reg_date, mod_date
+        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
+               link, image, author, publisher, description, reg_date, mod_date
         FROM item
+        ORDER BY reg_date DESC
+        LIMIT #{offset, jdbcType=INTEGER}, #{limit, jdbcType=INTEGER}
     </select>
 
-    <!-- 특정 데이터 조회 -->
+    <!-- 특정 상품 데이터 조회 -->
     <select id="selectItemDetail" parameterType="int" resultType="com.test.demo.vo.ItemVo">
-        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, reg_date, mod_date
+        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
+               link, image, author, publisher, description, reg_date, mod_date
         FROM item
         WHERE item_id = #{itemId}
     </select>
 
-    <!-- 데이터 수정 -->
+    <!-- 전체 상품 개수 조회 -->
+    <select id="selectTotalItemCount" resultType="int">
+        SELECT COUNT(*) FROM item
+    </select>
+
+    <!-- 페이지네이션을 지원하는 상품 조회 -->
+    <select id="selectItemsWithPagination" resultType="com.test.demo.vo.ItemVo">
+        SELECT
+            item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
+            link, image, author, publisher, description, reg_date, mod_date
+        FROM item
+        ORDER BY reg_date DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 상품 데이터 수정 -->
     <update id="updateItem" parameterType="com.test.demo.vo.ItemVo">
         UPDATE item
-        SET item_name = #{itemName}, category = #{category}, seller_id = #{sellerId}, buyer_id = #{buyerId},
-            view = #{view}, trade = #{trade}, status = #{status}, price = #{price}, mod_date = NOW()
+        SET
+            item_name = #{itemName}, category = #{category}, seller_id = #{sellerId}, buyer_id = #{buyerId},
+            view = #{view}, trade = #{trade}, status = #{status}, price = #{price}, ori_price = #{oriPrice},
+            link = #{link}, image = #{image}, author = #{author}, publisher = #{publisher},
+            description = #{description}, mod_date = NOW()
         WHERE item_id = #{itemId}
     </update>
 
-    <!-- 데이터 삭제 -->
+    <!-- 상품 데이터 삭제 -->
     <delete id="deleteItem" parameterType="int">
-        DELETE FROM item WHERE item_id = #{itemId}
+        DELETE FROM item
+        WHERE item_id = #{itemId}
     </delete>
 
     <!-- 조회수 증가 -->
@@ -58,12 +85,56 @@
         VALUES (#{itemId}, #{buyerId})
     </insert>
 
-
     <!-- 상품 정가 가져오기 -->
     <select id="getOriPrice" parameterType="int" resultType="int">
         SELECT ori_price
-        FROM detail
+        FROM item
         WHERE item_id = #{itemId}
     </select>
+
+    <!-- 카테고리 이름 가져오기 -->
+    <select id="getCategoryName" parameterType="int" resultType="string">
+        SELECT category_name
+        FROM category
+        WHERE category_id = #{categoryId}
+    </select>
+
+    <!-- 판매 게시물 등록 -->
+    <insert id="insertPost" parameterType="com.test.demo.vo.PostVo">
+        INSERT INTO post (
+            post_title, item_id, seller_id, price, description, notes, reg_date, mod_date
+        ) VALUES (
+                     #{postTitle}, #{itemId}, #{sellerId}, #{price}, #{description}, #{notes}, NOW(), NOW()
+                 )
+    </insert>
+
+    <!-- 판매 게시물 목록 조회 -->
+    <select id="selectPosts" resultType="com.test.demo.vo.PostVo" parameterType="map">
+        SELECT post_id, post_title, item_id, seller_id, price, description, notes, reg_date, mod_date
+        FROM post
+        ORDER BY reg_date DESC
+        LIMIT #{start, jdbcType=INTEGER}, #{display, jdbcType=INTEGER}
+    </select>
+
+    <!-- 판매 게시물 상세 조회 -->
+    <select id="selectPostDetail" parameterType="int" resultType="com.test.demo.vo.PostVo">
+        SELECT post_id, post_title, item_id, seller_id, price, description, notes, reg_date, mod_date
+        FROM post
+        WHERE post_id = #{postId}
+    </select>
+
+    <!-- 판매 게시물 수정 -->
+    <update id="updatePost" parameterType="com.test.demo.vo.PostVo">
+        UPDATE post
+        SET post_title = #{postTitle}, price = #{price}, description = #{description},
+            notes = #{notes}, mod_date = NOW()
+        WHERE post_id = #{postId}
+    </update>
+
+    <!-- 판매 게시물 삭제 -->
+    <delete id="deletePost" parameterType="int">
+        DELETE FROM post
+        WHERE post_id = #{postId}
+    </delete>
 
 </mapper>

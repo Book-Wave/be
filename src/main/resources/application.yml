@@ -6,6 +6,14 @@ spring:
     url: jdbc:mysql://book-wave-db.cze40aa02479.ap-northeast-2.rds.amazonaws.com:3306/bw
     username: eungyu
     password: Dyek4687!!
+  jpa:
+    hibernate:
+      ddl-auto: update # 테이블 생성 및 업데이트 전략
+    show-sql: true # SQL 쿼리 로그 표시
+  logging:
+    level:
+      org.hibernate.SQL: DEBUG
+      org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 kakaoAPI:
   tokenUrl: "https://kauth.kakao.com/oauth/token"
@@ -13,4 +21,7 @@ kakaoAPI:
   redirectUrl: "http://localhost:8080/book/auth/callback"
   logoutUrl: "http://localhost:8080"
 
-
+naverAPI:
+  clientId: "1OVKwoLQ_G3UrjXzFI6Y"
+  clientSecret: "UONgp6mBRe"
+  searchUrl: "https://openapi.naver.com/v1/search/book.json"
