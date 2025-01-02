@@ -67,7 +67,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // jackson localdate 직렬화
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+
 
 }
 

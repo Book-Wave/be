@@ -3,6 +3,7 @@ package com.test.demo.controller;
 import com.test.demo.service.ItemService;
 import com.test.demo.vo.ItemVo;
 import com.test.demo.vo.PostVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +20,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/book/item") // 기본 URL 경로 설정
+@Slf4j
 public class ItemController {
 
     @Autowired // ItemService를 주입받아 서비스 계층에 접근
@@ -80,6 +82,7 @@ public class ItemController {
     // 특정 상품 상세 조회
     @GetMapping("/{itemId}")
     public ResponseEntity<ItemVo> getItemDetail(@PathVariable int itemId) {
+        log.info("Itemid : {}",itemId);
         itemService.increaseView(itemId); // 조회수 증가
         return ResponseEntity.ok(itemService.getItemDetail(itemId));
     }
@@ -92,7 +95,7 @@ public class ItemController {
     }
 
     // 상품 수정
-    @PutMapping("/{itemId}/update")
+    @PostMapping("/{itemId}/update")
     public ResponseEntity<String> updateItem(@PathVariable int itemId, @RequestBody ItemVo item) {
         itemService.updateItem(itemId, item);
         return ResponseEntity.ok("상품 수정 성공");

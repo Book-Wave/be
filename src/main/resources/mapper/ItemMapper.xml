@@ -8,30 +8,77 @@
     <!-- 상품 데이터 삽입 -->
     <insert id="insertItem" parameterType="com.test.demo.vo.ItemVo">
         INSERT INTO item (
-            item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
+            item_name, category, title, seller_id, buyer_id, view, trade, status, price, my_price, note,
             link, image, author, publisher, description, reg_date, mod_date
         ) VALUES (
-                     #{itemName}, #{category}, #{sellerId}, #{buyerId}, #{view}, #{trade}, #{status}, #{price}, #{oriPrice},
+                     #{itemName}, #{category}, #{title}, #{sellerId}, #{buyerId}, #{view}, #{trade}, #{status}, #{price}, #{myPrice}, #{note},
                      #{link}, #{image}, #{author}, #{publisher}, #{description}, NOW(), NOW()
                  )
     </insert>
 
     <!-- 상품 데이터 조회 -->
-    <select id="selectItems" resultType="com.test.demo.vo.ItemVo">
-        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
-               link, image, author, publisher, description, reg_date, mod_date
+    <resultMap id="itemResultMap" type="com.test.demo.vo.ItemVo">
+        <result property="itemId" column="item_id"/>
+        <result property="title" column="title"/>
+        <result property="itemName" column="item_name"/>
+        <result property="category" column="category"/>
+        <result property="sellerId" column="seller_id"/>
+        <result property="buyerId" column="buyer_id"/>
+        <result property="view" column="view"/>
+        <result property="trade" column="trade"/>
+        <result property="status" column="status"/>
+        <result property="price" column="price"/>
+        <result property="myPrice" column="myprice"/>
+        <result property="link" column="link"/>
+        <result property="image" column="image"/>
+        <result property="note" column="note"/>
+        <result property="author" column="author"/>
+        <result property="publisher" column="publisher"/>
+        <result property="description" column="description"/>
+        <result property="regDate" column="reg_date"/>
+        <result property="modDate" column="mod_date"/>
+    </resultMap>
+
+    <select id="selectItems" resultMap="itemResultMap">
+        SELECT item_id, item_name, title,category, seller_id, buyer_id, view, trade, status, price, my_price,
+            link, image, author, publisher, description, reg_date, mod_date, note
         FROM item
         ORDER BY reg_date DESC
-        LIMIT #{offset, jdbcType=INTEGER}, #{limit, jdbcType=INTEGER}
+            LIMIT #{offset, jdbcType=INTEGER}, #{limit, jdbcType=INTEGER}
     </select>
 
+
     <!-- 특정 상품 데이터 조회 -->
-    <select id="selectItemDetail" parameterType="int" resultType="com.test.demo.vo.ItemVo">
-        SELECT item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
-               link, image, author, publisher, description, reg_date, mod_date
+    <resultMap id="itemVoMap" type="com.test.demo.vo.ItemVo">
+        <result property="itemId" column="item_id"/>
+        <result property="itemName" column="item_name"/>
+        <result property="category" column="category"/>
+        <result property="title" column="title"/>
+        <result property="sellerId" column="seller_id"/>
+        <result property="buyerId" column="buyer_id"/>
+        <result property="view" column="view"/>
+        <result property="trade" column="trade"/>
+        <result property="status" column="status"/>
+        <result property="price" column="price"/>
+        <result property="myPrice" column="my_price"/>
+        <result property="link" column="link"/>
+        <result property="image" column="image"/>
+        <result property="author" column="author"/>
+        <result property="publisher" column="publisher"/>
+        <result property="description" column="description"/>
+        <result property="regDate" column="reg_date"/>
+        <result property="modDate" column="mod_date"/>
+        <result property="note" column="note"/>
+    </resultMap>
+
+    <select id="selectItemDetail" parameterType="int" resultMap="itemVoMap">
+        SELECT
+            item_id, item_name, category, title, seller_id, buyer_id, view, trade, status, price, my_price,
+            link, image, author, publisher, description, reg_date, mod_date, note
         FROM item
         WHERE item_id = #{itemId}
     </select>
+
 
     <!-- 전체 상품 개수 조회 -->
     <select id="selectTotalItemCount" resultType="int">
@@ -41,8 +88,8 @@
     <!-- 페이지네이션을 지원하는 상품 조회 -->
     <select id="selectItemsWithPagination" resultType="com.test.demo.vo.ItemVo">
         SELECT
-            item_id, item_name, category, seller_id, buyer_id, view, trade, status, price, ori_price,
-            link, image, author, publisher, description, reg_date, mod_date
+            item_id, item_name, category, seller_id,title, buyer_id, view, trade, status, price, my_price,
+            link, image, author, publisher, description, reg_date, mod_date, note
         FROM item
         ORDER BY reg_date DESC
         LIMIT #{offset}, #{limit}
@@ -53,9 +100,9 @@
         UPDATE item
         SET
             item_name = #{itemName}, category = #{category}, seller_id = #{sellerId}, buyer_id = #{buyerId},
-            view = #{view}, trade = #{trade}, status = #{status}, price = #{price}, ori_price = #{oriPrice},
-            link = #{link}, image = #{image}, author = #{author}, publisher = #{publisher},
-            description = #{description}, mod_date = NOW()
+            view = #{view}, trade = #{trade}, status = #{status}, price = #{price}, my_price = #{myPrice},
+            link = #{link}, image = #{image}, author = #{author}, publisher = #{publisher},note = #{note},title = #{title},
+            description = #{description}, reg_date =#{regDate}, mod_date = NOW()
         WHERE item_id = #{itemId}
     </update>
 
@@ -86,8 +133,8 @@
     </insert>
 
     <!-- 상품 정가 가져오기 -->
-    <select id="getOriPrice" parameterType="int" resultType="int">
-        SELECT ori_price
+    <select id="getPrice" parameterType="int" resultType="int">
+        SELECT price
         FROM item
         WHERE item_id = #{itemId}
     </select>

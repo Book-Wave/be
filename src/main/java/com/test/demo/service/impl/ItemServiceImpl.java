@@ -4,21 +4,28 @@ import com.test.demo.dao.ItemDao;
 import com.test.demo.service.ItemService;
 import com.test.demo.vo.ItemVo;
 import com.test.demo.vo.PostVo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.test.demo.mapper.CategoryMapper;
+
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+
 /**
  * ItemServiceImpl: 서비스 계층 구현
  */
 @Service
+@Slf4j
 public class ItemServiceImpl implements ItemService {
 
     @Autowired // ItemDao를 주입받아 데이터베이스 접근
     private ItemDao itemDao;
+
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     // 상품 관련 메서드
 
@@ -30,30 +37,46 @@ public class ItemServiceImpl implements ItemService {
         // 기본값 설정
         int offset = mutableParams.get("offset") != null ? Integer.parseInt(mutableParams.get("offset").toString()) : 0;
         int limit = mutableParams.get("limit") != null ? Integer.parseInt(mutableParams.get("limit").toString()) : 10;
+        System.out.println("mutableParams: " + mutableParams);
 
         // 수정 가능한 Map에 값 추가
         mutableParams.put("offset", offset);
         mutableParams.put("limit", limit);
+        System.out.println("Params before DAO call: " + mutableParams);
 
         // DAO 호출
         return itemDao.selectItems(mutableParams);
     }
 
-
     @Override
     public ItemVo getItemDetail(int itemId) {
-        // 특정 상품의 상세 정보를 조회하기 전에 조회수 증가
+        log.info("service itemId : " + itemId);
+
+        // 조회수 증가
         itemDao.increaseView(itemId);
-        // 상품 상세 정보 반환
-        return itemDao.selectItemDetail(itemId);
+
+        // 상품 상세 정보 가져오기
+        ItemVo item = itemDao.selectItemDetail(itemId);
+
+        // modDate 변환 (LocalDateTime -> String)
+        if (item.getModDate() != null) {
+            item.setModDate(formatDate(LocalDateTime.parse(item.getModDate(), formatter)));
+        }
+
+        return item;
     }
+
+
 
     @Override
     public void registerItem(ItemVo item) {
-
         // 날짜 설정
-        item.setRegDate(LocalDateTime.now());
-        item.setModDate(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+
+        // 포맷터 적용
+        String formattedDate = now.format(formatter);
+        item.setRegDate(formattedDate);
+        item.setModDate(formattedDate);
 
         // DB에 삽입
         itemDao.insertItem(item);
@@ -61,10 +84,14 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public void updateItem(int itemId, ItemVo item) {
-        // 상품 수정 시 itemId를 설정하고 수정 날짜를 현재 날짜로 갱신
+        // itemId 설정
         item.setItemId(itemId);
-        item.setModDate(LocalDateTime.now());
-        // 수정된 상품 정보를 DB에 저장
+
+        // modDate를 현재 시간으로 설정 및 변환
+        LocalDateTime now = LocalDateTime.now();
+        item.setModDate(formatDate(now));
+
+        // DB에 수정된 데이터 저장
         itemDao.updateItem(item);
     }
 
@@ -138,9 +165,15 @@ public class ItemServiceImpl implements ItemService {
         int offset = (page - 1) * size; // 페이지 번호를 offset으로 변환 (0부터 시작)
         return itemDao.selectItemsWithPagination(offset, size);
     }
+
     @Override
     public int getTotalItemCount() {
         // ItemDao를 통해 전체 상품 개수를 가져옴
         return itemDao.selectTotalItemCount();
+    }
+
+    // LocalDateTime을 String으로 변환
+    private String formatDate(LocalDateTime dateTime) {
+        return dateTime.format(formatter);
     }
 }
