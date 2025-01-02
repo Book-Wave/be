@@ -27,7 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        if (request.getRequestURI().startsWith("/book/auth/") || request.getRequestURI().startsWith("/ws")) {
+        if (request.getRequestURI().startsWith("/book/auth/") || request.getRequestURI().startsWith("/ws") || request.getRequestURI().startsWith("/item")) {
             chain.doFilter(request, response); // 필터 검사 제외
             return;
         }
