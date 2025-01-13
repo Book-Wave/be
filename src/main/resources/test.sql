@@ -20,3 +20,14 @@ CREATE TABLE chatroom (
 );
 
 TRUNCATE TABLE chat;
+
+CREATE TABLE `review` (
+                          `item_id`	int	NOT NULL PRIMARY KEY,
+                          `seller_id`	int	NOT NULL,
+                          `buyer_id`	int	NOT NULL,
+                          `1`	boolean	NULL,
+                          `2`	boolean	NULL,
+                          `3`	boolean	NULL,
+                          `4`	boolean	NULL,
+                          `5`	boolean	NULL
+);
