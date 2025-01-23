@@ -64,8 +64,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-#      host: 52.78.186.21
+#      host: localhost
+      host: 52.78.186.21
       port: 6379
 
   mybatis:

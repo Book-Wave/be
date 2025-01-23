@@ -4,18 +4,23 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.test.demo.mapper.ShopMapper">
-
     <!-- 로그인 된 유저의 itemlist 가져오기 -->
-    <select id="getShopItemList" parameterType="String" resultType="com.test.demo.vo.ItemVo">
+    <select id="getShopItems" parameterType="String" resultType="com.test.demo.vo.ItemVo">
         SELECT * FROM item
-        WHERE item.seller_id = #{username}
+        WHERE item.seller_id = #{shopId}
     </select>
 
     <!-- 로그인 된 유저의 리뷰 가져오기 -->
-    <select id="getShopReview" parameterType="String" resultType="com.test.demo.vo.ReviewVo">
+    <select id="getShopReviews" parameterType="String" resultType="com.test.demo.vo.ReviewVo">
         SELECT * FROM review
-        WHERE review.seller_id = #{username}
+        WHERE review.seller_id = #{shopId}
     </select>
 
-
+    <!-- 로그인 된 유저의 찜한 상품 목록 가져오기 -->
+    <select id="getWishlist" parameterType="String" resultType="com.test.demo.vo.ItemVo">
+        SELECT i.*
+        FROM item i
+                 JOIN zzim z ON i.item_id = z.item_id
+        WHERE z.buyer_id = #{shopId}
+    </select>
 </mapper>
