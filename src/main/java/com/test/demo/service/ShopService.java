@@ -8,7 +8,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 public interface ShopService {
-    List<ItemVo> getShopItemList(String username);
-    List<ReviewVo> getShopReview(String username);
+    ShopInfo getShopInfo(Long shopId);
+    List<Product> getShopProducts(Long shopId);
+    List<Review> getShopReviews(Long shopId);
+    List<User> getFollowing(Long shopId);
+    List<User> getFollowers(Long shopId);
+    List<Product> getWishlist(Long shopId);
 
 }

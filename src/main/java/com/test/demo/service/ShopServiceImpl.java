@@ -14,12 +14,32 @@ public class ShopServiceImpl implements ShopService {
 
 
     @Override
-    public List<ItemVo> getShopItemList(String username) {
-
+    public ShopInfo getShopInfo(Long shopId) {
+        return null;
     }
 
     @Override
-    public List<ReviewVo> getShopReview(String username) {
+    public List<Product> getShopProducts(Long shopId) {
+        return null;
+    }
 
+    @Override
+    public List<Review> getShopReviews(Long shopId) {
+        return null;
+    }
+
+    @Override
+    public List<User> getFollowing(Long shopId) {
+        return null;
+    }
+
+    @Override
+    public List<User> getFollowers(Long shopId) {
+        return null;
+    }
+
+    @Override
+    public List<Product> getWishlist(Long shopId) {
+        return null;
     }
 }
