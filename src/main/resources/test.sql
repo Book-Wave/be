@@ -20,3 +20,18 @@ CREATE TABLE chatroom (
 );
 
 TRUNCATE TABLE chat;
+
+CREATE TABLE `review` (
+                          `item_id`	int	NOT NULL PRIMARY KEY,
+                          `seller_id`	int	NOT NULL,
+                          `buyer_id`	int	NOT NULL,
+                          `1`	boolean	NULL,
+                          `2`	boolean	NULL,
+                          `3`	boolean	NULL,
+                          `4`	boolean	NULL,
+                          `5`	boolean	NULL
+);
+
+
+ALTER TABLE item MODIFY COLUMN seller_id VARCHAR(255);
+UPDATE item SET seller_id = CAST(seller_id AS CHAR);

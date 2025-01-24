@@ -121,21 +121,25 @@ public class ChatService {
         }
     }
 
-    public void markMessagesAsRead(String roomId, List<Integer> messageIds, String receiver) {
+    public List<Integer> markMessagesAsRead(String roomId, List<Integer> messageIds, String receiver) {
         try {
             if (!roomId.startsWith("messages:")) {
                 roomId = "messages:" + URLDecoder.decode(roomId, "UTF-8");
             }
-            // 1. Redis 업데이트
+
+            // Redis 업데이트
             redisService.updateMessageReadStatusInRedis(roomId, messageIds);
 
-            // 2. DB 업데이트
+            // DB 업데이트
             Map<String, Object> params = new HashMap<>();
             params.put("messageIds", messageIds);
             params.put("receiver", receiver);
             chatDAO.updateMessageReadStatus(params);
 
             log.info("메시지 읽음 상태가 업데이트되었습니다. Room ID: {}, Message IDs: {}", roomId, messageIds);
+
+            // 업데이트된 메시지 ID 반환
+            return messageIds;
         } catch (Exception e) {
             throw new RuntimeException("메시지 읽음 상태 업데이트 중 오류가 발생했습니다: " + e.getMessage(), e);
         }

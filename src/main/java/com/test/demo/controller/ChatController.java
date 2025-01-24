@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -170,9 +171,14 @@ public class ChatController {
                 return ResponseEntity.badRequest().body("Invalid request payload");
             }
 
+            // 읽음 상태 업데이트
             chatService.markMessagesAsRead(roomId, messageIds, receiver);
 
-            return ResponseEntity.ok("메시지 읽음 상태가 업데이트되었습니다.");
+            // 처리 완료된 메시지 ID 목록 반환
+            return ResponseEntity.ok(new HashMap<String, Object>() {{
+                put("status", "success");
+                put("updatedMessages", messageIds);
+            }});
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("메시지 읽음 처리 중 오류가 발생했습니다: " + e.getMessage());

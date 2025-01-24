@@ -19,8 +19,6 @@
     import org.springframework.web.cors.CorsConfiguration;
     import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-    import java.util.Arrays;
-    import java.util.Collections;
 
     @Slf4j
     @Configuration
@@ -40,6 +38,7 @@
                     .requestMatchers("/book/auth/**", "/login", "/oauth2/**", "/book/chat/rooms","/ws/**","/book/chat/**","/book/item/**").permitAll() // 인증 없이 접근할 수 있는 경로
                     .requestMatchers(HttpMethod.GET, "/book/member/me").authenticated() // 인증된 사용자만 접근 가능한 경로
                     .requestMatchers(HttpMethod.GET, "/book/chat/rooms/{roomId}/messages").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/book/shops/**").authenticated()
                     .requestMatchers(HttpMethod.GET, "/book/chat/nickname").authenticated()
                     .requestMatchers(HttpMethod.POST, "/book/item/**").authenticated()
                     .anyRequest().denyAll() // 나머지 경로는 모두 접근 거부
