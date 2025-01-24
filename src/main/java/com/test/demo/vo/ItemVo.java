@@ -14,7 +14,7 @@ public class ItemVo {
     private String title;
     private int category;
     private String categoryName;
-    private int sellerId;
+    private String sellerId;
     private int buyerId;
     private int view;
     private int trade;

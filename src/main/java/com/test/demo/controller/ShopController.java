@@ -17,7 +17,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/book/shop")
+@RequestMapping("/book/shops")
 public class ShopController {
 
         @Autowired
@@ -30,6 +30,7 @@ public class ShopController {
 
         @GetMapping("/{shopId}/items")
         public ResponseEntity<List<ItemVo>> getShopItems(@PathVariable String shopId) {
+            log.info("내상점 items");
             return ResponseEntity.ok(shopService.getShopItems(shopId));
         }
 
