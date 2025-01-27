@@ -31,3 +31,6 @@ CREATE TABLE `review` (
                           `4`	boolean	NULL,
                           `5`	boolean	NULL
 );
+
+ALTER TABLE item
+    MODIFY COLUMN buyer_id VARCHAR(45) NULL;
