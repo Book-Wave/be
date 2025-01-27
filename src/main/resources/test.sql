@@ -32,5 +32,6 @@ CREATE TABLE `review` (
                           `5`	boolean	NULL
 );
 
-ALTER TABLE item
-    MODIFY COLUMN buyer_id VARCHAR(45) NULL;
+
+ALTER TABLE item MODIFY COLUMN seller_id VARCHAR(255);
+UPDATE item SET seller_id = CAST(seller_id AS CHAR);
