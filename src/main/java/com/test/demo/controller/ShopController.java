@@ -17,7 +17,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/book/shops")
+@RequestMapping("/book/shop")
 public class ShopController {
 
         @Autowired

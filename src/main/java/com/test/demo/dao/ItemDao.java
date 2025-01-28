@@ -39,5 +39,7 @@ public interface ItemDao {
 
     // 페이지네이션 메서드 추가
     List<ItemVo> selectItemsWithPagination(@Param("offset") int offset, @Param("limit") int limit);
+
+    void updateItemStatus(ItemVo item);
 }
 

@@ -35,4 +35,6 @@ public interface ItemService {
 
     // 전체 상품 개수 반환 메서드 추가
     int getTotalItemCount();
+    void updateItemStatus(int itemId, int status);
+    void deleteItems(List<Integer> itemIds);
 }

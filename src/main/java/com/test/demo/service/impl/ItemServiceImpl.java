@@ -176,4 +176,20 @@ public class ItemServiceImpl implements ItemService {
     private String formatDate(LocalDateTime dateTime) {
         return dateTime.format(formatter);
     }
+
+    @Override
+    public void updateItemStatus(int itemId, int status) {
+        ItemVo item = new ItemVo();
+        item.setItemId(itemId);
+        item.setStatus(status);
+        item.setModDate(LocalDateTime.now().format(formatter));
+        itemDao.updateItemStatus(item);
+    }
+
+    @Override
+    public void deleteItems(List<Integer> itemIds) {
+        for (Integer itemId : itemIds) {
+            itemDao.deleteItem(itemId);
+        }
+    }
 }
